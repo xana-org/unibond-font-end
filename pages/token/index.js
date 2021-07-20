@@ -1,7 +1,6 @@
 import { useEffect, useState }  from "react";
 import Image                    from "next/image";
 import { useRouter }            from "next/router";
-import { ethers }               from "ethers";
 import axios                    from "axios";
 import {
     Flex, 
@@ -21,24 +20,8 @@ import {
     POSITION_QUERY,
     COINGECKO_URL,
     UNI_V3_NFT_POSITIONS_ADDRESS,
-    UNI_V3_FACTORY_ADDRESS,
+    ETHPRICE_QUERY,
 } from "../../utils/const";
-import {
-    getSymbol,
-    getDecimals,
-} from "../../contracts/erc20";
-import {
-    getSlot0,
-} from "../../contracts/univ3_pool";
-import {
-    getPool,
-} from "../../contracts/univ3_factory";
-import {
-    getPosition
-} from "../../contracts/univ3_positions_nft";
-
-const { soliditySha3 } = require("web3-utils");
-const web3 = require("web3");
 
 const TokenPage = () => {
     const [uni_v3_nft, setUniV3NFT] = useState(null);
@@ -51,7 +34,6 @@ const TokenPage = () => {
     // Constants ---------------------------------------------------------------
     const x96 = Math.pow(2, 96);
     const x128 = Math.pow(2, 128);
-    const exampleNFTid = '28500';
     const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
 
     useEffect(() => {
@@ -221,18 +203,19 @@ const TokenPage = () => {
         setPosition({
             tickLower,
             tickUpper,
+            tick: tickCurrent,
             token0: position.token0.id,
             token1: position.token1.id,
             symbol0: symbol_0,
             symbol1: symbol_1,
-            fee: 3000,//pos.fee,
+            fee: parseInt(position.pool.feeTier),
             liquidity: positionLiquidity,
             img0: symbol_0 === "ETH" ? "/images/assets/eth.png": ((img0 && img0.logoURI) ? img0.logoURI : "/images/assets/infinite.svg"),
             img1: symbol_1 === "ETH" ? "/images/assets/eth.png": ((img1 && img1.logoURI) ? img1.logoURI : "/images/assets/infinite.svg"),
             decimals0: parseInt(position.token0),
             decimals1: parseInt(position.token1.decimals),
-            amount0: amount_1_Adjusted,
-            amount1: amount_0_Adjusted,
+            amount0: amount_0_Adjusted,
+            amount1: amount_1_Adjusted,
             curPrice: priceCurrentAdjustedReversed,
             lowerPrice: priceLowerAdjustedReversed,
             upperPrice: priceUpperAdjustedReversed,
@@ -257,17 +240,11 @@ const TokenPage = () => {
     const initialize = async (id) => {
         setTokenId(id);
         let _regTokens = [];
-        try {
-            const res = await axios.get("https://min-api.cryptocompare.com/data/price?fsym=ETH&tsyms=USD");
-            if (res && res.data && res.data.USD) {
-                setETHUSD(res.data.USD);
-            }
-        } catch (e) {
 
-        }
-        finally {
-
-        }
+        let priceRes = await axios.post(graphqlEndpoint, {
+          query: ETHPRICE_QUERY,
+        });
+        setETHUSD(parseFloat(priceRes.data.data.bundle.ethPriceUSD));
     
         try {
             const res = await axios.get(COINGECKO_URL);
@@ -423,12 +400,12 @@ const TokenPage = () => {
                 <Box bg="#212429" p="0.5rem" borderRadius="10px">
                     <Flex flexDirection="row" w={["100%", "100%", "20rem"]}>
                         {renderToken(symbol1, token1, img1)}
-                        <Text ml="auto">{a0}</Text>
+                        <Text ml="auto">{a1}</Text>
                         {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" bg="#2C2F36" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{100 - percent}%</Text>:(null)}
                     </Flex>
                     <Flex flexDirection="row" w={["100%", "100%", "20rem"]} mt="0.5rem">
                         {renderToken(symbol0, token0, img0)}
-                        <Text ml="auto">{a1}</Text>
+                        <Text ml="auto">{a0}</Text>
                         {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" bg="#2C2F36" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{percent}%</Text>:(null)}
                     </Flex>
                 </Box>
@@ -437,12 +414,12 @@ const TokenPage = () => {
             <Box bg="#212429" p="0.5rem" borderRadius="10px">
                 <Flex flexDirection="row" w={["100%", "100%", "20rem"]}>
                     {renderToken(symbol0, token0, img0)}
-                    <Text ml="auto">{a1}</Text>
+                    <Text ml="auto">{a0}</Text>
                     {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" bg="#2C2F36" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{percent}%</Text>:(null)}
                 </Flex>
                 <Flex flexDirection="row" w={["100%", "100%", "20rem"]} mt="0.5rem">
                     {renderToken(symbol1, token1, img1)}
-                    <Text ml="auto">{a0}</Text>
+                    <Text ml="auto">{a1}</Text>
                     {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" bg="#2C2F36" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{100 - percent}%</Text>:(null)}
                 </Flex>
             </Box>
@@ -450,22 +427,33 @@ const TokenPage = () => {
     }
 
     const renderFees = () => {
+        const { fee0, fee1, img0, img1, symbol0, symbol1 } = position;
+        let a0 = fee0;
+        let a1 = fee1;
+        if (fee0 < 1 && fee0 !== 0) {
+            if (fee0 < 0.00001) a0 = "<0.00001";
+            else a0 = fee0.toFixed(6);
+        }  else if (fee0 > 1) a0 = fee0.toFixed(2);
+        if (fee1 < 1 && fee1 !== 0) {
+            if (fee1 < 0.00001) a1 = "<0.00001";
+            else a1 = fee1.toFixed(6);
+        }  else if (fee1 > 1) a1 = fee1.toFixed(2);
         if (order)
             return (
                 <Box bg="#212429" p="0.5rem" borderRadius="10px">
                     <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between">
                         <Flex flexDirection="row">
-                            <ChakraImg alt="" src={position.img1} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
-                            <Text m="auto 0.5rem">{position.symbol1}</Text>
+                            <ChakraImg alt="" src={img1} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
+                            <Text m="auto 0.5rem">{symbol1}</Text>
                         </Flex>
-                        <Text>0</Text>
+                        <Text>{a1}</Text>
                     </Flex>
                     <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between" mt="0.5rem">
                         <Flex flexDirection="row">
-                            <ChakraImg alt="" src={position.img0} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
-                            <Text m="auto 0.5rem">{position.symbol0}</Text>
+                            <ChakraImg alt="" src={img0} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
+                            <Text m="auto 0.5rem">{symbol0}</Text>
                         </Flex>
-                        <Text>0</Text>
+                        <Text>{a0}</Text>
                     </Flex>
                 </Box>
             );
@@ -473,17 +461,17 @@ const TokenPage = () => {
             <Box bg="#212429" p="0.5rem" borderRadius="10px">
                 <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between">
                     <Flex flexDirection="row">
-                        <ChakraImg alt="" src={position.img0} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
-                        <Text m="auto 0.5rem">{position.symbol0}</Text>
+                        <ChakraImg alt="" src={img0} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
+                        <Text m="auto 0.5rem">{symbol0}</Text>
                     </Flex>
-                    <Text>0</Text>
+                    <Text>{a0}</Text>
                 </Flex>
                 <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between" mt="0.5rem">
                     <Flex flexDirection="row">
-                        <ChakraImg alt="" src={position.img1} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
-                        <Text m="auto 0.5rem">{position.symbol1}</Text>
+                        <ChakraImg alt="" src={img1} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
+                        <Text m="auto 0.5rem">{symbol1}</Text>
                     </Flex>
-                    <Text>0</Text>
+                    <Text>{a1}</Text>
                 </Flex>
             </Box>
         );
@@ -574,13 +562,33 @@ const TokenPage = () => {
         if (!liquidity || !parseInt(liquidity)) return "-";
         let usdLiq = 0;
         if (isStableCoin(token1)) {
-            usdLiq = amount1 / curPrice + amount0;
+            usdLiq = amount0 / curPrice + amount1;
         } else if (isStableCoin(token0)) {
-            usdLiq = amount0 * curPrice + amount1;
+            usdLiq = amount1 * curPrice + amount0;
         } else if (isWETH(token1)) {
-            usdLiq = amount1 / curPrice * ethUSD + amount0 * ethUSD;
+            usdLiq = amount0 / curPrice * ethUSD + amount1 * ethUSD;
         } else if (isWETH(token0)) {
-            usdLiq = amount0 * curPrice * ethUSD + amount1 * ethUSD;
+            usdLiq = amount1 * curPrice * ethUSD + amount0 * ethUSD;
+        } else {
+            return "-";
+        }
+        if (usdLiq > 1) return usdLiq.toFixed(2);
+        if (usdLiq >= 0.00001) return usdLiq.toFixed(6);
+        return "<0.00001";
+    }
+
+    const getFeeValue = () => {
+        const { curPrice, token0, token1, fee0, fee1, liquidity } = position;
+        if (!liquidity || !parseInt(liquidity)) return "-";
+        let usdLiq = 0;
+        if (isStableCoin(token1)) {
+            usdLiq = fee0 / curPrice + fee1;
+        } else if (isStableCoin(token0)) {
+            usdLiq = fee1 * curPrice + fee0;
+        } else if (isWETH(token1)) {
+            usdLiq = fee0 / curPrice * ethUSD + fee1 * ethUSD;
+        } else if (isWETH(token0)) {
+            usdLiq = fee1 * curPrice * ethUSD + fee0 * ethUSD;
         } else {
             return "-";
         }
@@ -631,7 +639,7 @@ const TokenPage = () => {
                                     </Box>
                                     <Box bg="#191B1F" p="1rem" borderRadius="20px" ml={[0, 0, "1rem"]} h="calc(50% - 1rem)" mt="1rem">
                                         <Text fontWeight="bold">Unclaimed fees</Text>
-                                        <Text fontWeight="bold" fontSize="40px">$-</Text>
+                                        <Text fontWeight="bold" fontSize="40px">${getFeeValue()}</Text>
                                         {renderFees()}
                                     </Box>
                                 </Box>
