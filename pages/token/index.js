@@ -6,8 +6,6 @@ import {
     Flex, 
     Box,
     Text,
-    SimpleGrid,
-    Input,
     Link,
     Spinner,
     Image as ChakraImg,
@@ -34,7 +32,8 @@ const TokenPage = () => {
     // Constants ---------------------------------------------------------------
     const x96 = Math.pow(2, 96);
     const x128 = Math.pow(2, 128);
-    const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
+    const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby';
+    //const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
 
     useEffect(() => {
     }, []);
@@ -46,13 +45,10 @@ const TokenPage = () => {
     }, [router]);
 
     const getPositionbySubGraph = async (id, _regTokens) => {
-        console.time('Uni Position Query');
-      
         // The call to the subgraph
         let positionRes = await axios.post(graphqlEndpoint, {
           query: POSITION_QUERY.replace('%1', id),
         });
-        console.log(positionRes);
         // Setting up some variables to keep things shorter & clearer
         let position = positionRes.data.data.position;
         let positionLiquidity = position.liquidity;
@@ -180,24 +176,6 @@ const TokenPage = () => {
           uncollectedFees_1 / Math.pow(10, position.token1.decimals);
         // UNCOLLECTED FEES END ----------------------------------------------------------------------------------
       
-        // Logs of the the results
-        console.table([
-          ['Pair', `${symbol_0}/${symbol_1}`],
-          ['Upper Price', priceUpperAdjusted.toPrecision(5)],
-          ['Current Price', priceCurrentAdjusted.toPrecision(5)],
-          ['Lower Price', priceLowerAdjusted.toPrecision(5)],
-          [`Current Amount ${symbol_0}`, amount_0_Adjusted.toPrecision(5)],
-          [`Current Amount ${symbol_1}`, amount_1_Adjusted.toPrecision(5)],
-          [`Uncollected Fee Amount ${symbol_0}`, uncollectedFeesAdjusted_0.toPrecision(5)],
-          [`Uncollected Fee Amount ${symbol_1}`, uncollectedFeesAdjusted_1.toPrecision(5)],
-          [`Decimals ${symbol_0}`, position.token0.decimals],
-          [`Decimals ${symbol_1}`, position.token1.decimals],
-          ['------------------', '------------------'],
-          ['Upper Price Reversed', priceUpperAdjustedReversed.toPrecision(5)],
-          ['Current Price Reversed', priceCurrentAdjustedReversed.toPrecision(5)],
-          ['Lower Price Reversed', priceLowerAdjustedReversed.toPrecision(5)],
-        ]);
-        console.timeEnd('Uni Position Query');
         const img0 = _regTokens.find(token => token.address.toLowerCase() === position.token0.id.toLowerCase());
         const img1 = _regTokens.find(token => token.address.toLowerCase() === position.token1.id.toLowerCase());
         setPosition({
@@ -273,50 +251,6 @@ const TokenPage = () => {
 
         }
         getPositionbySubGraph(id, _regTokens);
-
-        // try {
-        //     const provider = new ethers.providers.JsonRpcProvider("https://eth-mainnet.alchemyapi.io/v2/cVQWBBi-SmHIeEpek2OmH5xgevUvElob");
-        //     const pos = await getPosition(UNI_V3_NFT_POSITIONS_ADDRESS, id, provider);
-        //     const symbol0 = await getSymbol(pos.token0, provider);
-        //     const symbol1 = await getSymbol(pos.token1, provider);
-        //     const decimals0 = await getDecimals(pos.token0, provider);
-        //     const decimals1 = await getDecimals(pos.token1, provider);
-        //     const poolAddr = await getPool(UNI_V3_FACTORY_ADDRESS, pos.token0, pos.token1, pos.fee, provider);
-        //     const slot0 = await getSlot0(poolAddr, provider);
-        //     const img0 = _regTokens.find(token => token.address.toLowerCase() === pos.token0.toLowerCase());
-        //     const img1 = _regTokens.find(token => token.address.toLowerCase() === pos.token1.toLowerCase());
-
-        //     const tickLower = pos.tickLower;
-        //     const tickUpper = pos.tickUpper;
-        //     const tick = slot0.tick;
-        //     const p0 = Math.pow(1.0001, tickLower);
-        //     const p1 = Math.pow(1.0001, tickUpper);
-        //     const p = Math.pow(1.0001, tick);
-        //     const maxPrice = 1 / p0;
-        //     const minPrice = 1 / p1;
-        //     const curPrice = 1 / p;
-        //     let amount0 = 0;
-        //     let amount1 = 0;
-        //     const liquidity = pos.liquidity.toString();
-        //     if (liquidity && parseInt(liquidity)) {
-        //         let l = parseInt(liquidity);
-        //         if (curPrice <= minPrice) {
-        //             amount0 = (l / Math.sqrt(minPrice) - l / Math.sqrt(maxPrice)) / Math.pow(10, decimals1);
-        //             amount1 = 0;    
-        //         } else if (curPrice < maxPrice) {
-        //             amount0 = (l / Math.sqrt(curPrice) - l / Math.sqrt(maxPrice)) / Math.pow(10, decimals1);
-        //             amount1 = (l * Math.sqrt(curPrice) - l * Math.sqrt(minPrice)) / Math.pow(10, decimals0);
-        //         } else {
-        //             amount1= l  * (Math.sqrt(maxPrice) - Math.sqrt(minPrice)) / Math.pow(10, decimals0);
-        //             amount0 = 0;
-        //         }
-        //     }
-        //     if (pos) {
-        //     }
-        // } catch (e) {
-        // } finally {
-            
-        // }
     }
 
     const renderFee = () => {

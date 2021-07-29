@@ -32,7 +32,8 @@ const ExplorePage = () => {
 
     const initialize = async () => {
         try {
-            const res = await axios.get("https://api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec");
+            //const res = await axios.get("https://api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec");
+            const res = await axios.get("https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec?force_update=true");
             if (res && res.data && res.data.assets) {
                 setUniv3Data(res.data.assets);
                 setOffset(res.data.assets.length);
@@ -44,7 +45,8 @@ const ExplorePage = () => {
         }
 
         try {
-            const provider = new ethers.providers.JsonRpcProvider("https://eth-mainnet.alchemyapi.io/v2/cVQWBBi-SmHIeEpek2OmH5xgevUvElob");
+            //const provider = new ethers.providers.JsonRpcProvider("https://eth-mainnet.alchemyapi.io/v2/cVQWBBi-SmHIeEpek2OmH5xgevUvElob");
+            const provider = new ethers.providers.JsonRpcProvider("https://eth-rinkeby.alchemyapi.io/v2/0mtX4U8w5QpMAcPhDhsYdobs6UDDhFYs");
             const tSupply = await getTotalSupply(UNI_V3_NFT_POSITIONS_ADDRESS, provider);
             if (tSupply)
                 setTSupply(tSupply);
@@ -71,7 +73,8 @@ const ExplorePage = () => {
     const loadMore = async () => {
         setLoading(true);
         try {
-            const res = await axios.get("https://api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec&offset=" + offset);
+            //const res = await axios.get("https://api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec&offset=" + offset);
+            const res = await axios.get("https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec&offset=" + offset);
             if (res && res.data && res.data.assets) {
                 setUniv3Data(univ3Data.concat(res.data.assets));
                 setOffset(offset + res.data.assets.length);

@@ -4,11 +4,13 @@ import { Box }                  from "@chakra-ui/core";
 import useDidMount              from "../../hooks/useDidMount";
 import { scrollToPosition }     from "../../lib/scroll";
 import Header                   from "../Header";
+import { useWallet }            from "use-wallet";
 
 const Layout = ({ children }) => {
     const didMount = useDidMount();
     const router = useRouter();
     const { asPath } = router;
+    const wallet = useWallet();
 
     /**
      * Scroll to top on each route change using `asPath` (resolved path),
@@ -19,6 +21,19 @@ const Layout = ({ children }) => {
         scrollToPosition();
       }
     }, [asPath]);
+
+    useEffect(() => {
+      const status = window.localStorage.getItem("Unibond");
+      if (window.ethereum && status === "metamask")
+        wallet.connect("injected");
+    }, []);
+  
+    useEffect(() => {
+      const status = window.localStorage.getItem("Unibond");
+      if (window.ethereum && wallet && !wallet.ethereum && status === "metamask") {
+        wallet.connect("injected");
+      }
+    }, [wallet]);
   
   
     return (
