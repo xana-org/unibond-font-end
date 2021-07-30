@@ -79,9 +79,9 @@ const Header = () => {
                 <Link href="/myitem">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">My Item</Text>
                 </Link>
-                <Link href="/">
+                {/* <Link href="/create">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Create Swap</Text>
-                </Link>
+                </Link> */}
                 <Link href="/">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Swap List</Text>
                 </Link>

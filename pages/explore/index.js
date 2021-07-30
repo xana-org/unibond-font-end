@@ -12,13 +12,15 @@ import {
     Image as CustomImg
 } from "@chakra-ui/core";
 import axios from "axios";
-
 import {
     getTotalSupply
 } from "../../contracts/univ3_positions_nft";
 import {
     UNI_V3_NFT_POSITIONS_ADDRESS
 } from "../../utils/const";
+import {
+    getAllData
+} from "../../opensea/api";
 
 const ExplorePage = () => {
     const router = useRouter();
@@ -32,11 +34,10 @@ const ExplorePage = () => {
 
     const initialize = async () => {
         try {
-            //const res = await axios.get("https://api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec");
-            const res = await axios.get("https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec?force_update=true");
-            if (res && res.data && res.data.assets) {
-                setUniv3Data(res.data.assets);
-                setOffset(res.data.assets.length);
+            const res = await getAllData(0);
+            if (res && res.assets) {
+                setUniv3Data(res.assets);
+                setOffset(res.assets.length);
             }
         } catch (e) {
 
@@ -74,10 +75,11 @@ const ExplorePage = () => {
         setLoading(true);
         try {
             //const res = await axios.get("https://api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec&offset=" + offset);
-            const res = await axios.get("https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec&offset=" + offset);
-            if (res && res.data && res.data.assets) {
-                setUniv3Data(univ3Data.concat(res.data.assets));
-                setOffset(offset + res.data.assets.length);
+//            const res = await axios.get("https://testnets-api.opensea.io/api/v1/assets?asset_contract_address=0xc36442b4a4522e871399cd717abdd847ab11fe88&order_direction=dec&offset=" + offset);
+            const res = await getAllData(offset);
+            if (res && res.assets) {
+                setUniv3Data(univ3Data.concat(res.assets));
+                setOffset(offset + res.assets.length);
             }
         } catch(e) {
 
@@ -88,7 +90,7 @@ const ExplorePage = () => {
 
     return (
         <Box w="100%" mt="6rem">
-            <Flex maxW="70rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
+            <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Box mb="2rem">
                     <Flex flexDirection="row" justifyContent="center">
                         <CustomImg w="60px" src="/images/tokenpage/uni.png" borderRadius="100%"/>

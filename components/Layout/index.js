@@ -28,12 +28,13 @@ const Layout = ({ children }) => {
         wallet.connect("injected");
     }, []);
   
-    useEffect(() => {
-      const status = window.localStorage.getItem("Unibond");
-      if (window.ethereum && wallet && !wallet.ethereum && status === "metamask") {
-        wallet.connect("injected");
-      }
-    }, [wallet]);
+    // useEffect(() => {
+    //   const status = window.localStorage.getItem("Unibond");
+    //   console.log("AAAA")
+    //   if (window.ethereum && wallet && !wallet.ethereum && status === "metamask") {
+    //     wallet.connect("injected");
+    //   }
+    // }, [wallet]);
   
   
     return (

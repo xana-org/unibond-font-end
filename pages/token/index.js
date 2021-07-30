@@ -79,6 +79,7 @@ const TokenPage = () => {
           parseFloat(position.tickLower.price0) / Math.pow(10, decimalDifference);
       
         // Prices (decimal adjusted and reversed)
+        console.log("PPP", pool.sqrtPrice, position.pool)
         let priceCurrentAdjustedReversed = 1 / priceCurrentAdjusted;
         let priceLowerAdjustedReversed = 1 / priceUpperAdjusted;
         let priceUpperAdjustedReversed = 1 / priceLowerAdjusted;
@@ -214,7 +215,7 @@ const TokenPage = () => {
         let price = Math.pow(sqrtPrice, 2);
         return price;
     }
-      
+
     const initialize = async (id) => {
         setTokenId(id);
         let _regTokens = [];

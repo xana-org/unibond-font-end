@@ -22,7 +22,7 @@ const ConnectPage = () => {
     return (
         <Box w="100%" mt="8rem">
             <Center>
-                <Flex maxW="70rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
+                <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                     <Text fontSize="34px" fontWeight="bold">Connect your wallet</Text>
                     <Text color="#888" fontWeight="bold">Connect with one of available wallet providers or create a new wallet!</Text>
                     <SimpleGrid spacing="2rem" minChildWidth="15rem" w="100%" m="2rem 0">
