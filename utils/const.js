@@ -1,10 +1,27 @@
 export const UNI_V3_NFT_POSITIONS_ADDRESS = "0xc36442b4a4522e871399cd717abdd847ab11fe88";
-export const UNIBOND_ADDRESS = "0x0f052f36418077a4f1FeB7D5A5aE507d6A9096AD";
+export const UNIBOND_ADDRESS = "0x7cB4867950Bc819bb5aA5269a30E651901e1b269";
 
 export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
 export const COINGECKO_URL = 'https://tokens.coingecko.com/uniswap/all.json';
 
+export const ONSALE_ASSETS_QUERY = `
+    query onSaleAssets {
+        swapLists(first: 5, where: {
+            creator: "%1",
+            status: 1
+        }) {
+            swapId
+            tokenId
+            payToken
+            amount
+            assetType
+            creator
+            status
+            buyer
+        }
+    }
+`;
 export const ETHPRICE_QUERY = `
     query ethPrice {
         bundle(id: 1) {

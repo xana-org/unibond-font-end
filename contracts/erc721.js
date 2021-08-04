@@ -2,6 +2,16 @@ import { ethers } from "ethers";
 import abi from './erc721.abi.json';
 import { isTransactionMined } from "../lib/helper";
 
+export async function getTokenURI(address, tokenId, signer) {
+  try {
+      const erc721 = new ethers.Contract(address, abi, signer);
+      const res = await erc721.tokenURI(tokenId);
+      return res;
+  } catch (e) {
+      return "";
+  }
+}
+
 export async function isApprovedForAll(address, owner, operator, signer) {
     try {
         const erc721 = new ethers.Contract(address, abi, signer);

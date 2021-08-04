@@ -38,37 +38,48 @@ import {
     ETHPRICE_QUERY,
     UNI_V3_NFT_POSITIONS_ADDRESS,
     UNIBOND_ADDRESS,
+    ONSALE_ASSETS_QUERY,
 } from "../../utils/const";
 import {
     isApprovedForAll,
-    setApprovalForAll
+    setApprovalForAll,
+    getTokenURI,
 } from "../../contracts/erc721";
 import {
-    createSwap
+    createSwap,
+    cancelSwap,
 } from "../../contracts/unibond";
+const base64  = require("base-64");
 
 const MyItemPage = () => {
     const wallet = useWallet();
     const router = useRouter();
-    const [loaded, setLoaded] = useState(false);
-    const [myItems, setMyItems] = useState([]);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [sellItem, setSellItem] = useState(null);
-    const [ethUSD, setETHUSD] = useState(0);
-    const [curAsset, setCurAsset] = useState(0);
+
     const { isOpen, onToggle } = useDisclosure();
-    const [assetAmount, setAssetAmount] = useState(0);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [loaded, setLoaded] = useState(false);
     const [isUniv3approved, setIsUniv3Approved] = useState(false);
     const [approving, setApproving] = useState(false);
     const [listing, setListing] = useState(false);
+    const [loading, setLoading] = useState(true);
+
+    const [sellItem, setSellItem] = useState(null);
+
+    const [ethUSD, setETHUSD] = useState(0);
+    const [curAsset, setCurAsset] = useState(0);
+    const [assetAmount, setAssetAmount] = useState(0);
+
+    const [myItems, setMyItems] = useState([]);
+    const [onsaleAssets, setOnSaleAssets] = useState([]);
 
     const supportAssets = [
-        {name: "ETH", img: "/images/assets/eth.png"},
+        {name: "ETH", img: "/images/assets/eth.png", address: "0x000000000000000000000000000000000000dEaD", decimals: 18},
         {name: "WETH", img: "/images/assets/WETH.png", address: "0xdf032bc4b9dc2782bb09352007d4c57b75160b15", decimals: 18},
         {name: "DAI", img: "/images/assets/DAI.png", address: "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735", decimals: 18},
         //{name: "USDT", img: "/images/assets/USDT.png"},
     ];
     const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
+    const graphqlUnibond ='https://api.thegraph.com/subgraphs/name/cryptodev7/unibond';
 
     useEffect(() => {
         initialize()
@@ -88,24 +99,62 @@ const MyItemPage = () => {
             router.push("/connect");
         if (isWalletConnected(wallet) && !loaded) {
             setLoaded(true);
-            const address = getWalletAddress(wallet);
-            const res = await getAllAssets(address, 0, 50);
-            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
-            const approved = await isApprovedForAll(UNI_V3_NFT_POSITIONS_ADDRESS, address, UNIBOND_ADDRESS, provider);
-            setIsUniv3Approved(approved);
-            if (res && res.assets) {
-                console.log(res.assets);
-                setMyItems([...res.assets]);
+            try {
+                const address = getWalletAddress(wallet);
+                const res = await getAllAssets(address, 0, 50);
+                const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+                const approved = await isApprovedForAll(UNI_V3_NFT_POSITIONS_ADDRESS, address, UNIBOND_ADDRESS, provider);
+                setIsUniv3Approved(approved);
+                if (res && res.assets) {
+                    setMyItems([...res.assets]);
+                }
+                let onsaleAssets = await axios.post(graphqlUnibond, {
+                  query: ONSALE_ASSETS_QUERY.replace('%1', address),
+                });
+                const promises = [];
+                const _swapList = [];
+                const assets = onsaleAssets.data.data.swapLists;
+                for (let i = 0; i < assets.length; i ++) {
+                    const _swap = assets[i];
+                    promises.push(getTokenURI(UNI_V3_NFT_POSITIONS_ADDRESS, _swap.tokenId, provider));
+                }
+                const promiseResult = await Promise.all(promises);
+                for(let i = 0; i < promiseResult.length; i ++) {
+                    const parts = promiseResult[i].split(",");
+                    const bytes = base64.decode(parts[1]);
+                    let jsonData = JSON.parse(bytes);
+                    jsonData.tokenId = assets[i].tokenId;
+                    jsonData.swapId = assets[i].swapId;
+                    _swapList.push(jsonData);
+                }
+                setOnSaleAssets([..._swapList]);
+            } catch (e) {
+                console.log(e);
+            } finally {
+                setLoading(false);
             }
         }
     }, [wallet]);
 
-    const onNFTSelect = (item) => {
-        router.push("/token?id=" + item.token_id)
+    const reload = async () => {
+        setLoading(true);
+        try { 
+            const res = await getAllAssets(address, 0, 50);
+            if (res && res.assets) {
+                setMyItems([...res.assets]);
+            }
+        } catch (e) {
+
+        } finally {
+            setLoading(false);
+        }
+    }
+
+    const onNFTSelect = (tokenId) => {
+        router.push("/token?id=" + tokenId)
     }
 
     const onPutonSale = (item) => {
-        console.log(item);
         setSellItem(item);
         setIsModalOpen(true);
     }
@@ -223,21 +272,34 @@ const MyItemPage = () => {
         );
     }
 
+    const convertToBigNumer = (str, decimals) => {
+        const parts = str.split(".");
+        let plen = 0;
+        if (parts[1] && parts[1].length) plen = parts[1].length;
+        if (plen > decimals) return "";
+        return parts[0] + (plen ? parts[1] : "") + "0".repeat(decimals - plen);
+    }
+
     const onList = async () => {
         try {
             const provider = new ethers.providers.Web3Provider(wallet.ethereum);
             const signer = await provider.getSigner();
+            const amount = convertToBigNumer(assetAmount + "", supportAssets[curAsset].decimals);
+            if (!amount) return;
             setListing(true);
-            // const hash = await createSwap(
-            //     UNIBOND_ADDRESS,
-            //     sellItem.
-            //     signer
-            // );
+            const hash = await createSwap(
+                UNIBOND_ADDRESS,
+                sellItem.token_id,
+                supportAssets[curAsset].address,
+                amount,
+                curAsset ? 0 : 1,
+                signer
+            );
             if (hash) {
-                setIsUniv3Approved(true);
+                //setIsUniv3Approved(true);
             }
         } catch (e) {
-            
+            console.log(e);            
         } finally {
             setListing(false);
         }
@@ -266,48 +328,122 @@ const MyItemPage = () => {
         );
     }
 
+    const renderOwnedPanel = () => {
+        if (myItems.length)
+            return (
+                <TabPanel>
+                    <SimpleGrid spacing="1rem" minChildWidth="15rem" w="100%">
+                        {myItems.map((item, index) => {
+                            if (!item.image_thumbnail_url) return (null);
+                            return (
+                                <Box key={index} border="1px solid #2e2e2e" p="2rem 0 0rem 0" borderRadius="10px" userSelect="none" 
+                                    _hover={{boxShadow: "0px 0px 8px 4px rgba(255, 255, 255, 0.1)"}} transition="0.3s"
+                                >
+                                    <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item.token_id)}>
+                                        <Image src={item.image_thumbnail_url} width={150} height={200} alt="" priority={true} loading="eager"/>
+                                    </Flex>
+                                    <Text fontSize="12px" p="1rem 0.5rem" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
+                                    <Flex flexDirection="row" m="0 1rem 1rem 1rem">
+                                        <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onPutonSale(item)}>
+                                            <Text fontSize="12px">Put on Sale</Text>
+                                        </Flex>
+                                    </Flex>
+                                </Box>
+                            )
+                        })}
+                        <Box/>
+                        <Box/>
+                        <Box/>
+                    </SimpleGrid>
+                </TabPanel>
+            );
+        return (
+            <TabPanel>
+                <Flex mt="3rem" flexDirection="column">
+                    <Text m="0 auto" fontSize="24px" fontWeight="bold">No items found</Text>
+                    <Text m="0 auto" fontSize="18px" fontWeight="bold" color="#999" pt="1rem">Please try to browse something for you on our marketplace</Text>
+                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="2rem auto" onClick={() => {router.push("/swaplist")}}>
+                        <Text fontSize="12px">Browse marketplace</Text>
+                    </Flex>
+                </Flex>
+            </TabPanel>
+        );
+    }
+
+    const onCancelSale = async (item) => {
+        console.log("ABC",item);
+        try {
+            setListing(true);
+            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+            const signer = await provider.getSigner();
+            const hash = await cancelSwap(UNIBOND_ADDRESS, item.swapId, signer);
+            if (hash) {
+
+            }
+        } catch (e) {
+
+        } finally {
+            setListing(false);
+        }
+    }
+
+    const renderOnSalePanel = () => {
+        if (onsaleAssets.length)
+            return (
+                <TabPanel>
+                    <SimpleGrid spacing="1rem" minChildWidth="15rem" w="100%">
+                        {onsaleAssets.map((item, index) => {
+                            return (
+                                <Box key={index} border="1px solid #2e2e2e" p="2rem 0 0rem 0" borderRadius="10px" userSelect="none" 
+                                    _hover={{boxShadow: "0px 0px 8px 4px rgba(255, 255, 255, 0.1)"}} transition="0.3s"
+                                >
+                                    <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item.tokenId)}>
+                                        <ChakraImg src={item.image} maxW="150px"/>
+                                    </Flex>
+                                    <Text fontSize="12px" p="1rem 0.5rem" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
+                                    <Flex flexDirection="row" m="0 1rem 1rem 1rem">
+                                        <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onCancelSale(item)}>
+                                            <Text fontSize="12px">Cancle Sale</Text>
+                                        </Flex>
+                                    </Flex>
+                                </Box>
+                            )
+                        })}
+                        <Box/>
+                        <Box/>
+                        <Box/>
+                    </SimpleGrid>
+                </TabPanel>
+            );
+        return (
+            <TabPanel>
+                <Flex mt="3rem" flexDirection="column">
+                    <Text m="0 auto" fontSize="24px" fontWeight="bold">No items found</Text>
+                    <Text m="0 auto" fontSize="18px" fontWeight="bold" color="#999" pt="1rem">Please try to browse something for you on our marketplace</Text>
+                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="2rem auto" onClick={() => {router.push("/swaplist")}}>
+                        <Text fontSize="12px">Browse marketplace</Text>
+                    </Flex>
+                </Flex>
+            </TabPanel>
+        );
+    }
+
     return (
         <Box w="100%" mt="6rem">
             {renderModal()}
-            {!loaded?
-                <Flex>
+            {loading?
+                <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                     <Spinner m="0 auto"/>
                 </Flex>:
                 <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                     <Tabs variant="enclosed">
                         <TabList>
                             <Tab>Owned ({myItems.length})</Tab>
-                            <Tab>On Sale</Tab>
+                            <Tab>On Sale ({onsaleAssets.length})</Tab>
                         </TabList>
                         <TabPanels>
-                            <TabPanel>
-                                <SimpleGrid spacing="1rem" minChildWidth="15rem" w="100%">
-                                    {myItems.map((item, index) => {
-                                        if (!item.image_thumbnail_url) return (null);
-                                        return (
-                                            <Box key={index} border="1px solid #2e2e2e" p="2rem 0 0rem 0" borderRadius="10px" userSelect="none" 
-                                                _hover={{boxShadow: "0px 0px 8px 4px rgba(255, 255, 255, 0.1)"}} transition="0.3s"
-                                            >
-                                                <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item)}>
-                                                    <Image src={item.image_thumbnail_url} width={150} height={200} alt="" priority={true} loading="eager"/>
-                                                </Flex>
-                                                <Text fontSize="12px" p="1rem 0.5rem" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
-                                                <Flex flexDirection="row" m="0 1rem 1rem 1rem">
-                                                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onPutonSale(item)}>
-                                                        <Text fontSize="12px">Put on Sale</Text>
-                                                    </Flex>
-                                                </Flex>
-                                            </Box>
-                                        )
-                                    })}
-                                    <Box/>
-                                    <Box/>
-                                    <Box/>
-                                </SimpleGrid>
-                            </TabPanel>
-                            <TabPanel>
-                            <p>two!</p>
-                            </TabPanel>
+                            {renderOwnedPanel()}
+                            {renderOnSalePanel()}
                         </TabPanels>
                     </Tabs>
                 </Flex>
