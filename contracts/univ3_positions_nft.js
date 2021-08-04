@@ -20,3 +20,13 @@ export async function getPosition(addr, id, signer) {
         return null;
     }
 }
+
+export async function getOwnerOf(addr, id, signer) {
+    try {
+        const contract = new ethers.Contract(addr, abi, signer);
+        const owner = await contract.ownerOf(id);
+        return owner;
+    } catch (e) {
+        return "";
+    }
+}

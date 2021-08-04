@@ -5,9 +5,38 @@ export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
 export const COINGECKO_URL = 'https://tokens.coingecko.com/uniswap/all.json';
 
+export const UNIBOND_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond";
+export const UNIV3_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
+
+export const JSON_PROVIDER = "https://eth-rinkeby.alchemyapi.io/v2/QxTWCvdeBBSzUV9U5rM2r1dZJRvRGObN";
+
+export const SCAN_LINK = "https://rinkeby.etherscan.io";
+
+export const EXPLORE_QUERY = `
+    query exploreQuery {
+        tokenHolders(skip: %1, first: 100, orderBy:tokenId,
+          orderDirection: desc
+        ) {
+          tokenId
+          holderAddress
+        }
+    }      
+`;
+
+export const OWNED_ASSETS_QUERY = `
+    query ownedAssets {
+        tokenHolders(first: 100, orderBy:tokenId, orderDirection: asc, where: {
+            holderAddress: "%1"  
+        }) {
+          tokenId
+          holderAddress
+        }
+    }      
+`;
+
 export const ONSALE_ASSETS_QUERY = `
     query onSaleAssets {
-        swapLists(first: 5, where: {
+        swapLists(first: 10, where: {
             creator: "%1",
             status: 1
         }) {
@@ -22,6 +51,7 @@ export const ONSALE_ASSETS_QUERY = `
         }
     }
 `;
+
 export const ETHPRICE_QUERY = `
     query ethPrice {
         bundle(id: 1) {
