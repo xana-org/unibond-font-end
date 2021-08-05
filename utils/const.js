@@ -14,7 +14,7 @@ export const SCAN_LINK = "https://rinkeby.etherscan.io";
 
 export const EXPLORE_QUERY = `
     query exploreQuery {
-        tokenHolders(skip: %1, first: 100, orderBy:tokenId,
+        tokenHolders(skip: %1, first: 12, orderBy:tokenId,
           orderDirection: desc
         ) {
           tokenId
@@ -36,7 +36,7 @@ export const OWNED_ASSETS_QUERY = `
 
 export const ONSALE_ASSETS_QUERY = `
     query onSaleAssets {
-        swapLists(first: 10, where: {
+        swapLists(first: 100, where: {
             creator: "%1",
             status: 1
         }) {
@@ -52,6 +52,20 @@ export const ONSALE_ASSETS_QUERY = `
     }
 `;
 
+export const SALELIST_ASSETS_QUERY = `
+    query saleList {
+        swapLists(first: 100, skip: 0) {
+            swapId
+            tokenId
+            payToken
+            amount
+            assetType
+            creator
+            status
+            buyer
+        }
+    }
+`;
 export const ETHPRICE_QUERY = `
     query ethPrice {
         bundle(id: 1) {

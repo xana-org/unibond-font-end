@@ -23,7 +23,8 @@ import {
     NumberInput,
     NumberInputField,
     useDisclosure,
-    useToast
+    useToast,
+    SkeletonText,
 } from "@chakra-ui/core";
 import { useWallet } from "use-wallet";
 import { useRouter } from "next/router";
@@ -427,7 +428,7 @@ const MyItemPage = () => {
                 <Flex mt="3rem" flexDirection="column">
                     <Text m="0 auto" fontSize="24px" fontWeight="bold">No items found</Text>
                     <Text m="0 auto" fontSize="18px" fontWeight="bold" color="#999" pt="1rem">Please try to browse something for you on our marketplace</Text>
-                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="2rem auto" onClick={() => {router.push("/swaplist")}}>
+                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="2rem auto" onClick={() => {router.push("/salelist")}}>
                         <Text fontSize="12px">Browse marketplace</Text>
                     </Flex>
                 </Flex>
@@ -516,7 +517,7 @@ const MyItemPage = () => {
                 <Flex mt="3rem" flexDirection="column">
                     <Text m="0 auto" fontSize="24px" fontWeight="bold">No items found</Text>
                     <Text m="0 auto" fontSize="18px" fontWeight="bold" color="#999" pt="1rem">Please try to browse something for you on our marketplace</Text>
-                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="2rem auto" onClick={() => {router.push("/swaplist")}}>
+                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" m="2rem auto" onClick={() => {router.push("/salelist")}}>
                         <Text fontSize="12px">Browse marketplace</Text>
                     </Flex>
                 </Flex>
@@ -527,9 +528,11 @@ const MyItemPage = () => {
     return (
         <Box w="100%" mt="6rem">
             {renderModal()}
-            {loading?
+            {!loaded?
                 <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
-                    <Spinner m="0 auto"/>
+                    <Box padding="6" boxShadow="lg">
+                        <SkeletonText mt="4" noOfLines={4} spacing="4" />
+                    </Box>
                 </Flex>:
                 <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                     <Tabs variant="enclosed">

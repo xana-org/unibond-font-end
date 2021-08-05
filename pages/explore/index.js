@@ -9,7 +9,8 @@ import {
     Text,
     SimpleGrid,
     Spinner,
-    Image
+    Image,
+    SkeletonText,
 } from "@chakra-ui/core";
 import {
     getTotalSupply
@@ -142,7 +143,10 @@ const ExplorePage = () => {
                         )
                     })}
                 </SimpleGrid>
-                {loading?<Spinner m="1rem auto"/>:
+                {loading?
+                    <Box padding="6" boxShadow="lg">
+                        <SkeletonText mt="4" noOfLines={4} spacing="4" />
+                    </Box>:
                     <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={loadMore}>
                         <Text fontSize="14px" fontWeight="bold">Load more</Text>
                     </Flex>

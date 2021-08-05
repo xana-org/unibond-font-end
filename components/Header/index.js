@@ -82,8 +82,8 @@ const Header = () => {
                 {/* <Link href="/create">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Create Swap</Text>
                 </Link> */}
-                <Link href="/swaplist">
-                    <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Swap List</Text>
+                <Link href="/salelist">
+                    <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Sale List</Text>
                 </Link>
                 {renderWallet()}
             </Flex>
