@@ -12,6 +12,26 @@ export const JSON_PROVIDER = "https://eth-rinkeby.alchemyapi.io/v2/QxTWCvdeBBSzU
 
 export const SCAN_LINK = "https://rinkeby.etherscan.io";
 
+export const SUPPORT_ASSETS = [
+    {name: "ETH", img: "/images/assets/eth.png", address: "0x000000000000000000000000000000000000dEaD", decimals: 18},
+    {name: "WETH", img: "/images/assets/WETH.png", address: "0xdf032bc4b9dc2782bb09352007d4c57b75160b15", decimals: 18},
+    {name: "DAI", img: "/images/assets/DAI.png", address: "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735", decimals: 18},
+    //{name: "USDT", img: "/images/assets/USDT.png"},
+];
+
+export const IS_ON_SALE_QUERY = `
+    query isOnSaleQuery {
+        swapLists(where: {
+            tokenId: %1,
+            status: 1
+        }) {
+            swapId,
+            payToken,
+            amount
+        }
+    }
+`;
+
 export const EXPLORE_QUERY = `
     query exploreQuery {
         tokenHolders(skip: %1, first: 12, orderBy:tokenId,
@@ -20,7 +40,7 @@ export const EXPLORE_QUERY = `
           tokenId
           holderAddress
         }
-    }      
+    }
 `;
 
 export const OWNED_ASSETS_QUERY = `
@@ -54,7 +74,8 @@ export const ONSALE_ASSETS_QUERY = `
 
 export const SALELIST_ASSETS_QUERY = `
     query saleList {
-        swapLists(first: 100, skip: 0) {
+        swapLists(first: 100, skip: %1, orderBy:swapId,
+            orderDirection: desc) {
             swapId
             tokenId
             payToken

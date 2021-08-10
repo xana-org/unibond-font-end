@@ -42,9 +42,48 @@ export async function cancelSwap(address, swapId, signer) {
       return "";
     }
     return hash;
-    
-} catch (e) {
-  console.log(e);
-    return "";
+  } catch (e) {
+    console.log(e);
+      return "";
+  }
 }
+
+export async function swapWithETH(address, amount, swapId, signer) {
+  try {
+    const unibond = new ethers.Contract(address, abi, signer);
+    const { hash } = await unibond.swapWithETH(swapId, {value: ethers.utils.parseEther(amount + "")});
+    try {
+      while (true) {
+        let mined = await isTransactionMined(hash);
+        if (mined) break;
+      }
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+    return hash;
+  } catch (e) {
+    console.log(e);
+      return "";
+  }
+}
+
+export async function swapWithToken(address, swapId, signer) {
+  try {
+    const unibond = new ethers.Contract(address, abi, signer);
+    const { hash } = await unibond.swapWithToken(swapId);
+    try {
+      while (true) {
+        let mined = await isTransactionMined(hash);
+        if (mined) break;
+      }
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+    return hash;
+  } catch (e) {
+    console.log(e);
+      return "";
+  }
 }

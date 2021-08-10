@@ -39,6 +39,7 @@ import {
     ONSALE_ASSETS_QUERY,
     UNIBOND_GRAPH_ENDPOINT,
     OWNED_ASSETS_QUERY,
+    SUPPORT_ASSETS,
 } from "../../utils/const";
 import {
     isApprovedForAll,
@@ -73,12 +74,6 @@ const MyItemPage = () => {
     const [myItems, setMyItems] = useState([]);
     const [onsaleAssets, setOnSaleAssets] = useState([]);
 
-    const supportAssets = [
-        {name: "ETH", img: "/images/assets/eth.png", address: "0x000000000000000000000000000000000000dEaD", decimals: 18},
-        {name: "WETH", img: "/images/assets/WETH.png", address: "0xdf032bc4b9dc2782bb09352007d4c57b75160b15", decimals: 18},
-        {name: "DAI", img: "/images/assets/DAI.png", address: "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735", decimals: 18},
-        //{name: "USDT", img: "/images/assets/USDT.png"},
-    ];
     const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
 
     useEffect(() => {
@@ -86,7 +81,6 @@ const MyItemPage = () => {
     }, []);
 
     const initialize = async () => {
-
         let priceRes = await axios.post(graphqlEndpoint, {
           query: ETHPRICE_QUERY,
         });
@@ -199,8 +193,8 @@ const MyItemPage = () => {
                         <Flex flexDirection="row" justifyContent="space-between" mt="0.5rem">
                             <Flex flexDirection="row" m="auto 0" w="90px">
                                 <Flex flexDirection="row" cursor="pointer" onClick={onToggle} userSelect="none">
-                                    <Image src={supportAssets[curAsset].img} w="24px" m="auto 0"/>
-                                    <Text fontSize="14px" m="auto 0.5rem">{supportAssets[curAsset].name}</Text>
+                                    <Image src={SUPPORT_ASSETS[curAsset].img} w="24px" m="auto 0"/>
+                                    <Text fontSize="14px" m="auto 0.5rem">{SUPPORT_ASSETS[curAsset].name}</Text>
                                 </Flex>
                             </Flex>
                             <Flex m="auto 0">
@@ -214,7 +208,7 @@ const MyItemPage = () => {
                         </Flex>
                         <Box mt="0.5rem" bg="#131313" p="0 0.5rem" borderRadius="10px" w="150px">
                             <Collapse in={isOpen} animateOpacity>
-                                {supportAssets.map((item, index) => {
+                                {SUPPORT_ASSETS.map((item, index) => {
                                     return (
                                         <Flex flexDirection="row" key={index} userSelect="none" cursor="pointer" m="0.5rem 0"
                                             onClick={() => {setCurAsset(index); onToggle();}}
@@ -309,7 +303,7 @@ const MyItemPage = () => {
 
     const onList = async () => {
         try {
-            const amount = convertToBigNumer(assetAmount + "", supportAssets[curAsset].decimals);
+            const amount = convertToBigNumer(assetAmount + "", SUPPORT_ASSETS[curAsset].decimals);
             if (!amount || !parseFloat(amount)) {
                 toast({
                     title: "Error",
@@ -327,7 +321,7 @@ const MyItemPage = () => {
             const hash = await createSwap(
                 UNIBOND_ADDRESS,
                 sellItem.tokenId,
-                supportAssets[curAsset].address,
+                SUPPORT_ASSETS[curAsset].address,
                 amount,
                 curAsset ? 0 : 1,
                 signer
@@ -528,7 +522,7 @@ const MyItemPage = () => {
     return (
         <Box w="100%" mt="6rem">
             {renderModal()}
-            {!loaded?
+            {loading?
                 <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                     <Box padding="6" boxShadow="lg">
                         <SkeletonText mt="4" noOfLines={4} spacing="4" />

@@ -37,3 +37,32 @@ export async function getTotalSupply(coinAddress, signer) {
     return "0";
   }
 }
+
+export async function getAllowance(coinAddress, owner, operator, signer) {
+  try {
+    const erc20 = new ethers.Contract(coinAddress, abi, signer);
+    const allownce = await erc20.allowance(owner, operator);
+    return allownce.toString();
+  } catch (e) {
+    return "";
+  }
+}
+
+export async function approveAsset(coinAddress, operator, signer) {
+  try {
+    const erc20 = new ethers.Contract(coinAddress, abi, signer);
+    const { hash } = await erc20.approve(operator, "115792089237316195423570985008687907853269984665640564039457584007913129639935");
+    try {
+      while (true) {
+        let mined = await isTransactionMined(hash);
+        if (mined) break;
+      }
+    } catch (e) {
+      console.error(e);
+      return "";
+    }
+    return hash;
+  } catch (e) {
+    return "";
+  }
+}

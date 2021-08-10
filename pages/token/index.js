@@ -2,6 +2,7 @@ import { useEffect, useState }  from "react";
 import { useRouter }            from "next/router";
 import axios                    from "axios";
 import { ethers }               from "ethers";
+import { useWallet }            from "use-wallet";
 import {
     Flex, 
     Box,
@@ -9,6 +10,7 @@ import {
     Link,
     Spinner,
     Image,
+    useToast,
 } from "@chakra-ui/core";
 import {
     ExternalLinkIcon
@@ -21,16 +23,34 @@ import {
     UNIV3_GRAPH_ENDPOINT,
     JSON_PROVIDER,
     SCAN_LINK,
+    UNIBOND_GRAPH_ENDPOINT,
+    IS_ON_SALE_QUERY,
+    SUPPORT_ASSETS,
+    UNIBOND_ADDRESS,
 } from "../../utils/const";
 import {
-    getTokenURI
+    getTokenURI,
 } from "../../contracts/erc721";
+import {
+    approveAsset,
+    getAllowance,
+} from "../../contracts/erc20";
 import {
     getOwnerOf
 } from "../../contracts/univ3_positions_nft";
+import {
+    getWalletAddress
+} from "../../lib/wallet";
+import {
+    swapWithETH,
+    swapWithToken,
+} from "../../contracts/unibond";
 const base64  = require("base-64");
+import BigNumber from "bignumber.js";
 
 const TokenPage = () => {
+    const wallet = useWallet();
+    const toast = useToast();
     const [uni_v3_nft, setUniV3NFT] = useState(null);
     const [tokenId, setTokenId] = useState(0);
     const [position, setPosition] = useState(null);
@@ -38,26 +58,57 @@ const TokenPage = () => {
     const [regTokens, setRegTokens] = useState([]);
     const [ethUSD, setETHUSD] = useState(0);
     const router = useRouter();
+    const [saleInfo, setSaleInfo] = useState(null);
+    const [confirming, setConfirming] = useState(false);
+    const [approved, setApproved] = useState(false);
+    const [formatted, setFormatted] = useState(false);
+
     // Constants ---------------------------------------------------------------
     const x96 = Math.pow(2, 96);
     const x128 = Math.pow(2, 128);
     const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby';
     //const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
 
-    useEffect(() => {
-    }, []);
+    useEffect(async () => {
+        if (wallet && wallet.ethereum && !formatted && saleInfo) {
+            setFormatted(true);
+            try {
+                const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+                const walletAddr = getWalletAddress(wallet);
+                const allowance = await getAllowance(saleInfo.payToken, walletAddr, UNIBOND_ADDRESS, provider);
+                const bA = new BigNumber(allowance);
+                if (bA.greaterThanOrEqualTo(saleInfo.amount)) setApproved(true);
+                else setApproved(false);
+                } catch (e) {
+                    console.log(e);
+            }
+        }
+    }, [wallet]);
     
     useEffect(() => {
         if (router.query && router.query.id) {
             initialize(router.query.id);
+            checkIsOnSale(router.query.id);
         }
     }, [router]);
+
+    const checkIsOnSale = async (id) => {
+        let { data } = await axios.post(UNIBOND_GRAPH_ENDPOINT, {
+            query: IS_ON_SALE_QUERY.replace('%1', id),
+        });
+        if (data && data.data && data.data.swapLists) {
+            const _swapLists = data.data.swapLists;
+            if (_swapLists.length) {
+                setSaleInfo(_swapLists[0]);
+            }
+        }
+    }
 
     const getPositionbySubGraph = async (id, _regTokens) => {
         try {
             // The call to the subgraph
             let positionRes = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-            query: POSITION_QUERY.replace('%1', id),
+                query: POSITION_QUERY.replace('%1', id),
             });
             // Setting up some variables to keep things shorter & clearer
             let position = positionRes.data.data.position;
@@ -253,7 +304,6 @@ const TokenPage = () => {
             const provider = new ethers.providers.JsonRpcProvider(JSON_PROVIDER);
             const data = await getTokenURI(UNI_V3_NFT_POSITIONS_ADDRESS, id, provider);
             const ownerAddr = await getOwnerOf(UNI_V3_NFT_POSITIONS_ADDRESS, id, provider);
-            console.log("owner", ownerAddr);
             if (data) {
                 const parts = data.split(",");
                 const bytes = base64.decode(parts[1]);
@@ -555,6 +605,171 @@ const TokenPage = () => {
         return "<0.00001";
     }
 
+    const onBuy = async () => {
+        try {
+          setConfirming(true);
+          const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+          const signer = await provider.getSigner();
+          let hash = "";
+          if (saleInfo.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead") {
+            hash = await swapWithETH(UNIBOND_ADDRESS, parseFloat(saleInfo.amount) / Math.pow(10, 18), saleInfo.swapId, signer);
+          } else {
+            hash = await swapWithToken(UNIBOND_ADDRESS, saleInfo.swapId, signer);
+          }
+          if (hash) {
+            toast({
+                title: "Success",
+                description: "Transaction is confirmed.",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
+            setSaleInfo(null);
+          } else {
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
+          }
+        } catch(e) {
+          toast({
+              title: "Error",
+              description: "Transaction is reverted.",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+              position: "top-right"
+          });   
+        } finally {
+          setConfirming(false);
+        }
+
+    }
+
+    const onApproveItem = async () => {
+        try {
+            setConfirming(true);
+            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+            const signer = await provider.getSigner();
+            const hash = await approveAsset(saleInfo.payToken, UNIBOND_ADDRESS, signer);
+            if (hash) {
+                toast({
+                    title: "Success",
+                    description: "Transaction is confirmed.",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+                setApproved(true);
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Transaction is reverted.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+            }
+        } catch (e) {
+            console.log(e);
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
+        } finally {
+            setConfirming(false);
+        }
+    }
+
+    const renderApproveButton = () => {
+        if (saleInfo && saleInfo.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead") {
+          return (null);
+        }
+        if (!approved) {
+            if (confirming) {
+                return (
+                    <Flex bg="#2D81FF80" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" mb="0.5rem">
+                        <Text fontSize="14px" fontWeight="bold" m="0 auto">APPROVE</Text>
+                        <Spinner size="sm"/> 
+                    </Flex>
+                );
+            }
+            return (
+                <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} mb="0.5rem" onClick={onApproveItem}>
+                    <Text fontSize="14px" fontWeight="bold" m="0 auto">APPROVE</Text>
+                </Flex>
+            );
+        }
+        return (
+            <Flex bg="#aaa" p="0.5rem 2rem" borderRadius="30px" mb="0.5rem">
+                <Text fontSize="14px" fontWeight="bold" m="0 auto">APPROVED</Text>
+            </Flex>
+        );
+    }
+
+    const renderBuyButton = () => {
+      if (approved || (saleInfo && saleInfo.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead")) {
+        if (confirming) {
+          return (
+                <Flex bg="#2D81FF80" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}}>
+                    <Text fontSize="14px" fontWeight="bold" m="0 auto">BUY NOW!</Text>
+                    <Spinner size="sm"/>
+                </Flex>
+          );
+        }
+        return (
+            <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} onClick={onBuy}>
+                <Text fontSize="14px" fontWeight="bold" m="0 auto">BUY NOW!</Text>
+            </Flex>
+        );
+      }
+      return (
+            <Flex bg="#aaa" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}}>
+                <Text fontSize="14px" fontWeight="bold" m="0 auto">BUY NOW!</Text>
+            </Flex>
+      );
+    }
+
+    const renderBuyNow = () => {
+        if (!saleInfo) return (null);
+        if (!wallet || !wallet.ethereum) return (null);
+        let index = 0;
+        for (let i = 0; i < SUPPORT_ASSETS.length; i ++) {
+            if (saleInfo.payToken.toLowerCase() === SUPPORT_ASSETS[i].address.toLowerCase()) {
+                index = i;
+                break;
+            }
+        }
+        const sAsset = SUPPORT_ASSETS[index];
+        const amount = parseFloat(saleInfo.amount) / Math.pow(10, sAsset.decimals);
+        return (
+            <Box>
+                <Text fontSize="14px" color="#26AE60" fontWeight="bold">This NFT is on sale now.</Text>
+                <Flex flexDirection="row" justifyContent="space-between" mb="1rem">
+                    <Text fontSize="14px">Sale price</Text>
+                    <Flex flexDirection="row">
+                        <Image src={sAsset.img} h="20px"/>
+                        <Text fontSize="14px" m="auto 5px auto 5px" fontWeight="bold">{amount.toFixed(4)}</Text>
+                        <Text fontSize="14px" color="#aaa" m="auto 0">{sAsset.name}</Text>
+                    </Flex>
+                </Flex>
+                {renderApproveButton()}
+                {renderBuyButton()}
+            </Box>
+        )
+    }
+
     const renderNFT = () => {
         if (uni_v3_nft === null || position === null) {
             return (
@@ -637,15 +852,17 @@ const TokenPage = () => {
                     <Flex flexDirection={["column", "row"]} mt="1.5rem">
                         <Link href={"https://opensea.io/assets/0xc36442b4a4522e871399cd717abdd847ab11fe88/" + tokenId} isExternal _focus={{}} _active={{}} _hover={{}}>
                             <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}}>
-                                <Text fontSize="14px" fontWeight="bold">View at Opensea</Text>                            
+                                <Text fontSize="14px" fontWeight="bold">View at Opensea</Text>
                             </Flex>
                         </Link>
                         <Link href={"https://app.uniswap.org/#/pool/" + tokenId} isExternal _focus={{}} _active={{}} _hover={{}}>
                             <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} ml={[0, "1rem"]} mt={["1rem", 0]}>
-                                <Text fontSize="14px" fontWeight="bold">View at Uniswap</Text>                            
+                                <Text fontSize="14px" fontWeight="bold">View at Uniswap</Text>
                             </Flex>
                         </Link>
                     </Flex>
+                    <Box h="1px" w="100%" bg="#777" m="1rem auto"/>
+                    {renderBuyNow()}
                 </Box>
             </Flex>
         )
