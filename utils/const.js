@@ -74,7 +74,7 @@ export const ONSALE_ASSETS_QUERY = `
 
 export const SALELIST_ASSETS_QUERY = `
     query saleList {
-        swapLists(first: 100, skip: %1, orderBy:swapId,
+        swapLists(first: 8, skip: %1, orderBy:swapId,
             orderDirection: desc) {
             swapId
             tokenId

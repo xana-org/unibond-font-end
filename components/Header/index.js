@@ -71,7 +71,7 @@ const Header = () => {
     }
     return (
         <Flex flexDirection="row" w="100%" p="1rem 2rem" color="#fff" borderBottom="1px solid #2A2A2A" position="fixed" top={0} bg="#131313" zIndex={10}>
-            <Text mr="auto" fontWeight="bold" fontSize="24px">Zoracles</Text>
+            <Text mr="auto" fontWeight="bold" fontSize="24px">Unibond</Text>
             <Flex flexDirection="row" display={["none", "none", "none", "flex"]}>
                 <Link href="/explore">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Explore</Text>

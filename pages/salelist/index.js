@@ -58,6 +58,7 @@ const SaleList = () => {
   const [ethUSD, setETHUSD] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buyItem, setBuyItem] = useState(null);
+  const [nodata, setNodata] = useState(false);
 
   const [confirming, setConfirming] = useState(false);
 
@@ -85,21 +86,24 @@ const SaleList = () => {
         for (let i = 0; i < assets.length; i ++) {
           const _swap = assets[i];
           promises.push(getTokenURI(UNI_V3_NFT_POSITIONS_ADDRESS, _swap.tokenId, provider));
-      }
-      let promiseResult = await Promise.all(promises);
-      for(let i = 0; i < promiseResult.length; i ++) {
-          const parts = promiseResult[i].split(",");
-          const bytes = base64.decode(parts[1]);
-          let jsonData = JSON.parse(bytes);
-          jsonData.tokenId = assets[i].tokenId;
-          jsonData.swapId = assets[i].swapId;
-          jsonData.status = assets[i].status;
-          jsonData.buyer = assets[i].buyer;
-          jsonData.amount = assets[i].amount;
-          jsonData.payToken = assets[i].payToken;
-          _swapList.push(jsonData);
-      }
-      setSaleList([..._swapList])
+        }
+        let promiseResult = await Promise.all(promises);
+        for(let i = 0; i < promiseResult.length; i ++) {
+            const parts = promiseResult[i].split(",");
+            const bytes = base64.decode(parts[1]);
+            let jsonData = JSON.parse(bytes);
+            jsonData.tokenId = assets[i].tokenId;
+            jsonData.swapId = assets[i].swapId;
+            jsonData.status = assets[i].status;
+            jsonData.buyer = assets[i].buyer;
+            jsonData.amount = assets[i].amount;
+            jsonData.payToken = assets[i].payToken;
+            _swapList.push(jsonData);
+        }
+        if (_swapList.length < 8) setNodata(true);
+        else setNodata(false);
+        setSaleList([...saleList, ..._swapList]);
+        setOffset(offset + _swapList.length);
       }
     } catch (e) {
 
@@ -307,7 +311,7 @@ const SaleList = () => {
           duration: 5000,
           isClosable: true,
           position: "top-right"
-      });   
+      });
     } finally {
       setConfirming(false);
     }
@@ -394,9 +398,11 @@ const SaleList = () => {
             <Box padding="6" boxShadow="lg">
                 <SkeletonText mt="4" noOfLines={4} spacing="4" />
             </Box>:
-            <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto">
-                <Text fontSize="14px" fontWeight="bold">Load more</Text>
-            </Flex>
+            (nodata?(null):
+              <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={() => loadData(offset)}>
+                  <Text fontSize="14px" fontWeight="bold">Load more</Text>
+              </Flex>
+            )
         }
       </Flex>
     </Box>
