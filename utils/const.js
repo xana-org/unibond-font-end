@@ -75,7 +75,9 @@ export const ONSALE_ASSETS_QUERY = `
 export const SALELIST_ASSETS_QUERY = `
     query saleList {
         swapLists(first: 8, skip: %1, orderBy:swapId,
-            orderDirection: desc) {
+            orderDirection: desc, where: {
+                status: %2
+            }) {
             swapId
             tokenId
             payToken

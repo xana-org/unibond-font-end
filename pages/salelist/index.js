@@ -19,6 +19,7 @@ import {
   ModalBody,
   ModalCloseButton,
   useToast,
+  Select,
 } from "@chakra-ui/core";
 import {
   getTokenURI
@@ -61,6 +62,7 @@ const SaleList = () => {
   const [nodata, setNodata] = useState(false);
 
   const [confirming, setConfirming] = useState(false);
+  const [fOption, setfOption] = useState("1");
 
   const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
 
@@ -69,14 +71,14 @@ const SaleList = () => {
       query: ETHPRICE_QUERY,
     });
     setETHUSD(parseFloat(priceRes.data.data.bundle.ethPriceUSD));
-    loadData(0);
+    loadData(0, "1");
   }, []);
 
-  const loadData = async (offset) => {
+  const loadData = async (offset, fstatus) => {
     setLoading(true);
     try {
       const _salelist = await axios.post(UNIBOND_GRAPH_ENDPOINT, {
-          query: SALELIST_ASSETS_QUERY.replace('%1', offset),
+          query: SALELIST_ASSETS_QUERY.replace('%1', offset).replace('%2', fstatus),
       });
       let promises = [];
       let _swapList = [];
@@ -102,7 +104,10 @@ const SaleList = () => {
         }
         if (_swapList.length < 8) setNodata(true);
         else setNodata(false);
-        setSaleList([...saleList, ..._swapList]);
+        if (offset === 0)
+          setSaleList([..._swapList]);
+        else
+          setSaleList([...saleList, ..._swapList]);
         setOffset(offset + _swapList.length);
       }
     } catch (e) {
@@ -342,6 +347,7 @@ const SaleList = () => {
 
   const renderModal = () => {
     if (!buyItem) return (null);
+    console.log(buyItem);
     return (
       <Modal isOpen={isModalOpen} onClose={onModalClose}>
           <ModalOverlay />
@@ -371,10 +377,32 @@ const SaleList = () => {
     )
   }
 
+  const onFilterChange = (e) => {
+    setfOption(e.target.value);
+    setSaleList([]);
+    setOffset(0);
+    loadData(0, e.target.value);
+  }
+
+  const renderFilterOption = () => {
+    return (
+      <Box mb="30px">
+        <Box w="30%" minW="300px">
+          <Select placeholder="Select option" onChange={onFilterChange}>
+            <option value="1">Open</option>
+            <option value="2">Sold items</option>
+            <option value="0">Closed</option>
+          </Select>
+        </Box>
+      </Box>
+    )
+  }
+
   return (
     <Box w="100%" mt="6rem">
       {renderModal()}
       <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
+        {renderFilterOption()}
         <SimpleGrid spacing="1rem" minChildWidth="15rem" w="100%">
           {saleList.map((item, index) => {
               return (
@@ -393,13 +421,16 @@ const SaleList = () => {
                   </Box>
               )
           })}
+          <Box/>
+          <Box/>
+          <Box/>
         </SimpleGrid>
         {loading?
             <Box padding="6" boxShadow="lg">
                 <SkeletonText mt="4" noOfLines={4} spacing="4" />
             </Box>:
             (nodata?(null):
-              <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={() => loadData(offset)}>
+              <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={() => loadData(offset, fOption)}>
                   <Text fontSize="14px" fontWeight="bold">Load more</Text>
               </Flex>
             )

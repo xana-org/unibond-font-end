@@ -45,6 +45,10 @@ import {
     swapWithETH,
     swapWithToken,
 } from "../../contracts/unibond";
+import {
+    isStableCoin,
+    isWETH
+} from "../../lib/helper";
 const base64  = require("base-64");
 import BigNumber from "bignumber.js";
 
@@ -544,25 +548,6 @@ const TokenPage = () => {
                 <Text fontSize="14px">{order?symbol1:symbol0} per {!order?symbol1:symbol0}</Text>
             </Box>
         )
-    }
-
-    const isStableCoin  = (addr) => {
-        const coins = [
-            "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC,
-            "0xdac17f958d2ee523a2206206994597c13d831ec7", // USDT,
-            "0x6b175474e89094c44da98b954eedeac495271d0f", // DAI,
-            "0x71fc860F7D3A592A4a98740e39dB31d25db65ae8", // aUSDT,
-            "0x4fabb145d64652a948d72533023f6e7a623c7c53", // BUSD
-        ];
-        for(let i = 0; i < coins.length; i ++)
-            if(addr.toLowerCase() === coins[i].toLowerCase()) return true;
-        return false;
-    }
-
-    const isWETH = (addr) => {
-        const weth = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
-        if (addr.toLowerCase() === weth.toLowerCase()) return true;
-        return false;
     }
 
     const getLiquidityValue = () => {
