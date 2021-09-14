@@ -1,3 +1,8 @@
+export const x96 = Math.pow(2, 96);
+export const x128 = Math.pow(2, 128);
+
+export const ZORA_SCORE_API = "https://zora.cc/rating/";
+
 export const UNI_V3_NFT_POSITIONS_ADDRESS = "0xc36442b4a4522e871399cd717abdd847ab11fe88";
 export const UNIBOND_ADDRESS = "0x7cB4867950Bc819bb5aA5269a30E651901e1b269";
 
@@ -7,6 +12,7 @@ export const COINGECKO_URL = 'https://tokens.coingecko.com/uniswap/all.json';
 
 export const UNIBOND_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond";
 export const UNIV3_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
+export const BLOCK_ENDPOINT = "https://api.thegraph.com/subgraphs/name/blocklytics/rinkeby-blocks";
 
 export const JSON_PROVIDER = "https://eth-rinkeby.alchemyapi.io/v2/QxTWCvdeBBSzUV9U5rM2r1dZJRvRGObN";
 
@@ -152,3 +158,48 @@ export const POSITION_QUERY = `
         }
     }
 `;
+
+export const GET_BLOCK_QUERY = (timestamp) => {
+    return `
+        query GET_BLOCK {
+            blocks(
+                first: 1,
+                orderBy: timestamp,
+                orderDirection: desc,
+                where: {
+                  timestamp_gt: ${timestamp},
+                  timestamp_lt: ${timestamp + 600}
+                }
+            ) {
+                number
+            }
+        }
+    `
+}
+
+export const POOL_QUERY = (poolAddress, blockNumber) => {
+    return `
+        query poolQuery {
+            pools(
+                first: 1,
+                where: { id_in: ["${poolAddress}"] },` +
+                (blockNumber ? `block: { number: ${blockNumber}},` : ``) + 
+            `) {
+                feeTier
+                liquidity
+                sqrtPrice
+                tick
+                token0 {
+                    name
+                    decimals
+                    derivedETH
+                    symbol
+                }
+                totalValueLockedToken0
+                totalValueLockedToken1
+                volumeUSD
+                totalValueLockedUSD
+            }
+        }
+    `
+}

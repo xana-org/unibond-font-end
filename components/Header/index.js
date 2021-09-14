@@ -76,7 +76,7 @@ const Header = () => {
                 <Link href="/explore">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Explore</Text>
                 </Link>
-                <Link href="/myitem">
+                <Link href="/mypositions">
                     <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">My Item</Text>
                 </Link>
                 {/* <Link href="/create">
