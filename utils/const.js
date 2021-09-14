@@ -11,8 +11,8 @@ export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 export const COINGECKO_URL = 'https://tokens.coingecko.com/uniswap/all.json';
 
 export const UNIBOND_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond";
-export const UNIV3_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
-export const BLOCK_ENDPOINT = "https://api.thegraph.com/subgraphs/name/blocklytics/rinkeby-blocks";
+export const UNIV3_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"; // "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
+export const BLOCK_ENDPOINT = "https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks" // "https://api.thegraph.com/subgraphs/name/blocklytics/rinkeby-blocks";
 
 export const JSON_PROVIDER = "https://eth-rinkeby.alchemyapi.io/v2/QxTWCvdeBBSzUV9U5rM2r1dZJRvRGObN";
 
@@ -190,6 +190,14 @@ export const POOL_QUERY = (poolAddress, blockNumber) => {
                 sqrtPrice
                 tick
                 token0 {
+                    id
+                    name
+                    decimals
+                    derivedETH
+                    symbol
+                }
+                token1 {
+                    id
                     name
                     decimals
                     derivedETH

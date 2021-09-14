@@ -46,9 +46,11 @@ import {
 } from "../../utils/const";
 import {
     isStableCoin,
-    isWETH
+    isWETH,
+    get2DayChange,
+    useDeltaTimestamps,
+    formatDollarAmount,
 } from "../../lib/helper";
-import dayjs from 'dayjs'
 
 const MyPositionPage = () => {
     const router = useRouter();
@@ -111,25 +113,6 @@ const MyPositionPage = () => {
             tvlUSDChange
         }
     };
-
-    const get2DayChange = (valueNow, value24HoursAgo, value48HoursAgo) => {
-        // get volume info for both 24 hour periods
-        const currentChange = parseFloat(valueNow) - parseFloat(value24HoursAgo)
-        const previousChange = parseFloat(value24HoursAgo) - parseFloat(value48HoursAgo)
-        const adjustedPercentChange = ((currentChange - previousChange) / previousChange) * 100
-        if (isNaN(adjustedPercentChange) || !isFinite(adjustedPercentChange)) {
-            return [currentChange, 0]
-        }
-        return [currentChange, adjustedPercentChange]
-    }
-      
-    const useDeltaTimestamps = () => {
-        const utcCurrentTime = dayjs()
-        const t1 = utcCurrentTime.subtract(1, 'day').startOf('minute').unix()
-        const t2 = utcCurrentTime.subtract(2, 'day').startOf('minute').unix()
-        const tWeek = utcCurrentTime.subtract(1, 'week').startOf('minute').unix()
-        return [t1, t2, tWeek]
-    }
 
     const sqrtPriceToPriceAdjusted = (sqrtPriceX96Prop, decimalDifference) => {
         let sqrtPrice = parseFloat(sqrtPriceX96Prop) / x96;
@@ -391,9 +374,9 @@ const MyPositionPage = () => {
                 <Box w="10px" h="10px" borderRadius="100%" bg="none" m="auto 10px"/>
                 <Flex flexDirection="row">
                     <Text fontWeight="bold" mr="3px">{value}</Text>
-                    {percent && parseFloat(percent) ? <ArrowUpIcon m="auto 0" color="rgb(39, 174, 96)"/> : <ArrowDownIcon m="auto 0" color="rgb(253, 64, 64)"/>}
-                    <Text color={percent && parseFloat(percent) ? "rgb(39, 174, 96)" : "rgb(253, 64, 64)"}>
-                        ({value ? parseFloat(value).toFixed(2): "0.00"}%)
+                    {percent && parseFloat(percent) > 0 ? <ArrowUpIcon m="auto 0" color="rgb(39, 174, 96)"/> : <ArrowDownIcon m="auto 0" color="rgb(253, 64, 64)"/>}
+                    <Text color={percent && parseFloat(percent) > 0 ? "rgb(39, 174, 96)" : "rgb(253, 64, 64)"}>
+                        ({percent ? parseFloat(percent).toFixed(2): "0.00"}%)
                     </Text>
                 </Flex>
             </Flex>
@@ -438,8 +421,8 @@ const MyPositionPage = () => {
                                     {renderDetailItem("Asset Value:", "$ " + item.assetValue)}
                                     {renderDetailItem("Unclaimed Fees:", "$ " + item.feeValue)}
                                     {renderDetailItem("LP Risk Profile:","-")}
-                                    {renderDetailItem24("Volume 24h:", item.chgData.volumeUSD, item.chgData.volumeUSDChange)}
-                                    {renderDetailItem24("TVL:", item.chgData.tvlUSD, item.chgData.tvlUSDChange)}
+                                    {renderDetailItem24("Volume 24h:", formatDollarAmount(item.chgData.volumeUSD), item.chgData.volumeUSDChange)}
+                                    {renderDetailItem24("TVL:", formatDollarAmount(item.chgData.tvlUSD), item.chgData.tvlUSDChange)}
                                     <Flex bg="#2D81FF" m="15px auto 0 0" p="3px 30px" borderRadius="10px"
                                         cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s"
                                         onClick={() => {
