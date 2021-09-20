@@ -18,7 +18,7 @@ import {
 import {
     UNI_V3_NFT_POSITIONS_ADDRESS,
     EXPLORE_QUERY,
-    UNIBOND_GRAPH_ENDPOINT,
+    UNISWAPV3IDS,
     JSON_PROVIDER,
 } from "../../utils/const";
 import {
@@ -38,26 +38,31 @@ const ExplorePage = () => {
 
     const loadData = async (skip) => {
         try {
-            let assets = await axios.post(UNIBOND_GRAPH_ENDPOINT, {
+            let { data } = await axios.post(UNISWAPV3IDS, {
                 query: EXPLORE_QUERY.replace("%1", skip),
             });
-            if (assets && assets.data && assets.data.data && assets.data.data.tokenHolders) {
+            console.log(data);
+            if (data && data.data && data.data.tokenHolders) {
                 const provider = new ethers.providers.JsonRpcProvider(JSON_PROVIDER);
                 const _data = [];
                 const _promises = [];
-                const len = assets.data.data.tokenHolders.length;
+                const len = data.data.tokenHolders.length;
                 for (let i = 0; i < len; i ++) {
-                    const item = assets.data.data.tokenHolders[i];
+                    const item = data.data.tokenHolders[i];
                     _promises.push(getTokenURI(UNI_V3_NFT_POSITIONS_ADDRESS, item.tokenId, provider));
                 }
                 const promiseResult = await Promise.all(_promises);
                 for(let i = 0; i < promiseResult.length; i ++) {
-                    const item = assets.data.data.tokenHolders[i];
-                    const parts = promiseResult[i].split(",");
-                    const bytes = base64.decode(parts[1]);
-                    let jsonData = JSON.parse(bytes);
-                    jsonData.tokenId = item.tokenId;
-                    _data.push(jsonData);
+                    try {
+                        const item = data.data.tokenHolders[i];
+                        const parts = promiseResult[i].split(",");
+                        const bytes = base64.decode(parts[1]);
+                        let jsonData = JSON.parse(bytes);
+                        jsonData.tokenId = item.tokenId;
+                        _data.push(jsonData);
+                    } catch (e) {
+                        
+                    }
                 }
                 setUniv3Data(univ3Data.concat(_data));
                 setOffset(offset + _data.length);

@@ -1,6 +1,6 @@
 export const x96 = Math.pow(2, 96);
 export const x128 = Math.pow(2, 128);
-
+const IS_PROD = true;
 export const ZORA_SCORE_API = "https://zora.cc/rating/";
 
 export const UNI_V3_NFT_POSITIONS_ADDRESS = "0xc36442b4a4522e871399cd717abdd847ab11fe88";
@@ -10,13 +10,14 @@ export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
 export const COINGECKO_URL = 'https://tokens.coingecko.com/uniswap/all.json';
 
+export const UNISWAPV3IDS = IS_PROD ? "https://api.thegraph.com/subgraphs/name/cryptodev7/uniswapv3ids": "";
 export const UNIBOND_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond";
-export const UNIV3_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3"; // "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
-export const BLOCK_ENDPOINT = "https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks" // "https://api.thegraph.com/subgraphs/name/blocklytics/rinkeby-blocks";
+export const UNIV3_GRAPH_ENDPOINT = IS_PROD ? "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3" : "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
+export const BLOCK_ENDPOINT = IS_PROD ? "https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks" : "https://api.thegraph.com/subgraphs/name/blocklytics/rinkeby-blocks";
 
-export const JSON_PROVIDER = "https://eth-rinkeby.alchemyapi.io/v2/QxTWCvdeBBSzUV9U5rM2r1dZJRvRGObN";
+export const JSON_PROVIDER = IS_PROD ? "https://eth-mainnet.alchemyapi.io/v2/gURSYlgiE0OvWlmj6emPVvoh1mXuK1lr": "https://eth-rinkeby.alchemyapi.io/v2/QxTWCvdeBBSzUV9U5rM2r1dZJRvRGObN";
 
-export const SCAN_LINK = "https://rinkeby.etherscan.io";
+export const SCAN_LINK = IS_PROD ? "https://etherscan.io": "https://rinkeby.etherscan.io";
 
 export const SUPPORT_ASSETS = [
     {name: "ETH", img: "/images/assets/eth.png", address: "0x000000000000000000000000000000000000dEaD", decimals: 18},
@@ -24,6 +25,8 @@ export const SUPPORT_ASSETS = [
     {name: "DAI", img: "/images/assets/DAI.png", address: "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735", decimals: 18},
     //{name: "USDT", img: "/images/assets/USDT.png"},
 ];
+
+export const ONE_DAY_UNIX = 24 * 60 * 60
 
 export const IS_ON_SALE_QUERY = `
     query isOnSaleQuery {
@@ -107,6 +110,7 @@ export const POSITION_QUERY = `
     query tokenPosition {
         position(id: "%1"){
             id
+            owner
             token0{
                 symbol
                 derivedETH
@@ -209,5 +213,24 @@ export const POOL_QUERY = (poolAddress, blockNumber) => {
                 totalValueLockedUSD
             }
         }
+    `
+}
+
+export const POOL_CHART = (startTime, skip, poolAddress) => {
+    return `
+      query poolDayDatasQuery {
+        poolDayDatas(
+          first: 1000
+          skip: ${skip}
+          where: { pool: "${poolAddress}", date_gt: ${startTime} }
+          orderBy: date
+          orderDirection: asc
+          subgraphError: allow
+        ) {
+          date
+          volumeUSD
+          tvlUSD
+        }
+      }
     `
 }
