@@ -411,11 +411,11 @@ const MyPositionPage = () => {
                         <SkeletonText mt="4" noOfLines={4} spacing="4" />
                     </Box>
                 }
-                <SimpleGrid spacing="1rem" minChildWidth="35rem" w="100%">
+                <SimpleGrid spacing="2rem" minChildWidth="35rem" w="100%">
                     {myItems.map((item, index) => {
                         console.log(item)
                         return (
-                            <Flex key={index} border="1px solid #444" borderRadius="10px" p="20px 30px" flexDirection="row">
+                            <Flex key={index} borderRadius="20px" p="20px 30px" flexDirection="row" bg="#41444F">
                                 <Image src={item.image} alt="/" maxW="140px" mr="30px"/>
                                 <Flex flexDirection="column" mt="15px">
                                     {renderDetailItem("Asset Value:", "$ " + item.assetValue)}
@@ -426,7 +426,7 @@ const MyPositionPage = () => {
                                     <Flex bg="#2D81FF" m="15px auto 0 0" p="3px 30px" borderRadius="10px"
                                         cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s"
                                         onClick={() => {
-                                            router.push("/pools/" + item.poolAddress + "/" + item.tokenId)
+                                            router.push("/pools/" + item.tokenId)
                                         }}
                                     >
                                         <Text>View</Text>

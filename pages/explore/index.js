@@ -41,7 +41,6 @@ const ExplorePage = () => {
             let { data } = await axios.post(UNISWAPV3IDS, {
                 query: EXPLORE_QUERY.replace("%1", skip),
             });
-            console.log(data);
             if (data && data.data && data.data.tokenHolders) {
                 const provider = new ethers.providers.JsonRpcProvider(JSON_PROVIDER);
                 const _data = [];
@@ -61,9 +60,10 @@ const ExplorePage = () => {
                         jsonData.tokenId = item.tokenId;
                         _data.push(jsonData);
                     } catch (e) {
-                        
+
                     }
                 }
+                console.log(_data);
                 setUniv3Data(univ3Data.concat(_data));
                 setOffset(offset + _data.length);
             }
@@ -103,7 +103,7 @@ const ExplorePage = () => {
     }
 
     const onNFTSelect = (item) => {
-        router.push("/token?id=" + item.tokenId)
+        router.push("/pools/" + item.tokenId)
     }
 
     const loadMore = async () => {

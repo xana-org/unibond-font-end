@@ -20,7 +20,7 @@ import { useWallet } from "use-wallet";
 import {
     isWalletConnected,
     shortenWalletAddress,
-} from "../../../lib/wallet";
+} from "../../lib/wallet";
 import {
     get2DayChange,
     useDeltaTimestamps,
@@ -30,7 +30,7 @@ import {
     getPositionData,
     isStableCoin,
     isWETH
-} from "../../../lib/helper";
+} from "../../lib/helper";
 import {
     UNIV3_GRAPH_ENDPOINT,
     BLOCK_ENDPOINT,
@@ -40,10 +40,11 @@ import {
     COINGECKO_URL,
     ONE_DAY_UNIX,
     SCAN_LINK,
-} from "../../../utils/const"
-import LineChart from "../../../components/LineChart";
-import BarChart from "../../../components/BarChart";
+} from "../../utils/const"
+import LineChart from "../../components/LineChart";
+import BarChart from "../../components/BarChart";
 import dayjs from 'dayjs';
+import Big from "big.js";
 
 const Pool = () => {
     const router = useRouter();
@@ -51,7 +52,7 @@ const Pool = () => {
     const [initiated, setInitiated] = useState(false);
     const [poolLoaded, setPoolLoaded] = useState(false);
     const [pool, setPool] = useState(null);
-    const [position, setPosition] = useState(null);
+    const [position, setPosition] = useState(undefined);
     const [regTokens, setRegTokens] = useState(null);
     const [chartData, setChartData] = useState(undefined);
     const [view, setView] = useState(1);
@@ -145,12 +146,17 @@ const Pool = () => {
 
     useEffect(async () => {
         if (router.query && regTokens && !poolLoaded) {
+            const { tokenId } = router.query;
             setPoolLoaded(true);
-            const { address } = router.query;
+            const _position = await getPositionData(tokenId, regTokens);
+            console.log(_position);
+            setPosition({..._position});
+            const address = _position.poolAddr;
             const _pool = await getPoolData(address);
             setPool(_pool);
             const _chartData = await fetchPoolChartData(address);
             setChartData(_chartData);
+            console.log("position", _position);
         }
     }, [router, regTokens]);
 
@@ -160,9 +166,6 @@ const Pool = () => {
             if (tokenId && !initiated) {
                 setInitiated(true);
                 console.log(tokenId);
-                const _position = await getPositionData(tokenId, regTokens);
-                console.log("position", _position);
-                setPosition(_position);
             }
         }
     }, [router, wallet, regTokens]);
@@ -482,14 +485,16 @@ const Pool = () => {
         const { curPrice, token0, token1, fee0, fee1, liquidity } = position;
         if (!liquidity || !parseInt(liquidity)) return "-";
         let usdLiq = 0;
+        const f0 = parseFloat(fee0.toString());
+        const f1 = parseFloat(fee1.toString());
         if (isStableCoin(token1)) {
-            usdLiq = fee0 / curPrice + fee1;
+            usdLiq = f0 / curPrice + f1;
         } else if (isStableCoin(token0)) {
-            usdLiq = fee1 * curPrice + fee0;
+            usdLiq = f1 * curPrice + f0;
         } else if (isWETH(token1)) {
-            usdLiq = fee0 / curPrice * ethUSD + fee1 * ethUSD;
+            usdLiq = f0 / curPrice * ethUSD + f1 * ethUSD;
         } else if (isWETH(token0)) {
-            usdLiq = fee1 * curPrice * ethUSD + fee0 * ethUSD;
+            usdLiq = f1 * curPrice * ethUSD + f0 * ethUSD;
         } else {
             return "-";
         }
@@ -503,14 +508,16 @@ const Pool = () => {
             const { fee0, fee1, img0, img1, symbol0, symbol1 } = position;
             let a0 = fee0;
             let a1 = fee1;
-            if (fee0 < 1 && fee0 !== 0) {
-                if (fee0 < 0.00001) a0 = "<0.00001";
-                else a0 = fee0.toFixed(6);
-            }  else if (fee0 > 1) a0 = fee0.toFixed(2);
-            if (fee1 < 1 && fee1 !== 0) {
-                if (fee1 < 0.00001) a1 = "<0.00001";
-                else a1 = fee1.toFixed(6);
-            }  else if (fee1 > 1) a1 = fee1.toFixed(2);
+            const f0 = parseFloat(fee0);
+            const f1 = parseFloat(fee1);
+            if (f0 < 1 && f0 !== 0) {
+                if (f0 < 0.00001) a0 = "<0.00001";
+                else a0 = f0.toFixed(6);
+            }  else if (f0 > 1) a0 = f0.toFixed(2);
+            if (f1 < 1 && f1 !== 0) {
+                if (f1 < 0.00001) a1 = "<0.00001";
+                else a1 = f1.toFixed(6);
+            }  else if (f1 > 1) a1 = f1.toFixed(2);
             return (
                 <Box bg="#41444F" p="0.5rem" borderRadius="10px">
                     <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between">
@@ -548,15 +555,6 @@ const Pool = () => {
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Flex flexDirection="row" justifyContent="space-between">
                     <Box w="400px">
-                        <Box bg="#31333F" borderRadius="10px" mb="20px">
-                            <Box p="20px 20px">
-                                {poolNameBox}
-                            </Box>
-                            <Box m="" h="1px" w="100%" bg="#2D81FF"/>
-                            <Box p="15px 20px">
-                                {TTLBox}
-                            </Box>
-                        </Box>
                         <Box bg="#31333F" borderRadius="10px" m="auto 0" p="20px">
                             <Flex flexDirection="row" mb="10px">
                                 <Text fontWeight="bold" m="auto 0" >Position Info</Text>
@@ -585,10 +583,19 @@ const Pool = () => {
                         </Box>
                     </Box>
                     <Flex w="calc(100% - 420px)" flexDirection="column">
+                        <Box bg="#31333F" borderRadius="10px" mb="20px">
+                            <Box p="20px 20px">
+                                {poolNameBox}
+                            </Box>
+                            <Box m="" h="1px" w="100%" bg="#2D81FF"/>
+                            <Box p="15px 20px">
+                                {TTLBox}
+                            </Box>
+                        </Box>
                         <Box p="20px 40px" bg="#31333F" borderRadius="10px" w="100%" mb="30px">
                             {TwoDayData}
                         </Box>
-                        <Flex p="20px 20px" bg="#31333F" w="100%" m="auto 0" borderRadius="10px" flexDirection="column">
+                        <Flex p="20px 20px" bg="#31333F" w="100%" mb="auto" borderRadius="10px" flexDirection="column">
                             <Flex flexDirection="row">
                                 <Flex flexDirection="row">
                                     <Text fontWeight="bold">

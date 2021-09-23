@@ -43,7 +43,7 @@ export const IS_ON_SALE_QUERY = `
 
 export const EXPLORE_QUERY = `
     query exploreQuery {
-        tokenHolders(skip: %1, first: 12, orderBy:tokenId,
+        tokenHolders(skip: %1, first: 8, orderBy:tokenId,
           orderDirection: desc
         ) {
           tokenId
@@ -111,6 +111,9 @@ export const POSITION_QUERY = `
         position(id: "%1"){
             id
             owner
+            pool {
+              id
+            }
             token0{
                 symbol
                 derivedETH
