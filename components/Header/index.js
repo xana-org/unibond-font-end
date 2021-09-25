@@ -1,4 +1,5 @@
 import {
+    Box,
     Flex,
     Text,
     Menu,
@@ -44,16 +45,16 @@ const Header = () => {
         if (!isWalletConnected(wallet))
             return (
                 <Link href="/connect">
-                    <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}}>
-                        <Text fontSize="14px" fontWeight="bold">Connect</Text>
+                    <Flex bg="#24252C" p="0.7rem 1rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}}>
+                        <Text fontSize="14px" color="#fff" fontWeight="bold">Connect</Text>
                     </Flex>
                 </Link>
             );
         return (
-            <Flex flexDirection="row">
+            <Flex flexDirection="row" color="#fff">
                 <Menu>
                     <MenuButton>
-                        <Flex cursor="pointer" p="0.5rem 2rem" bg="#2D81FF" borderRadius="30px" m="auto 0" _hover={{opacity: 0.9}} transition="0.3s">
+                        <Flex cursor="pointer" p="0.7rem 2rem" bg="#24252C" borderRadius="30px" m="auto 0" _hover={{opacity: 0.9}} transition="0.3s">
                             <Text fontWeight="bold" fontSize="12px">{getMyWalletAddress()}</Text>
                         </Flex>
                     </MenuButton>
@@ -70,24 +71,26 @@ const Header = () => {
         )
     }
     return (
-        <Flex flexDirection="row" w="100%" p="1rem 2rem" color="#fff" borderBottom="1px solid #2A2A2A" position="fixed" top={0} bg="#131313" zIndex={10}>
-            <Text mr="auto" fontWeight="bold" fontSize="24px">Unibond</Text>
-            <Flex flexDirection="row" display={["none", "none", "none", "flex"]}>
-                <Link href="/explore">
-                    <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Explore</Text>
-                </Link>
-                <Link href="/mypositions">
-                    <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">My Item</Text>
-                </Link>
-                {/* <Link href="/create">
-                    <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Create Swap</Text>
-                </Link> */}
-                <Link href="/salelist">
-                    <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Sale List</Text>
-                </Link>
+        <Box w="100%" color="#0E0F11" borderBottom="1px solid #E7E9EC" position="fixed" top={0} bg="#fff" zIndex={10}>
+            <Flex maxW="80rem" w="100%" m="0 auto"  p="1rem 1rem" flexDirection="row" justifyContent="space-between">
+                <Text fontWeight="bold" fontSize="24px">Unibond</Text>
+                <Flex flexDirection="row" display={["none", "none", "none", "flex"]}>
+                    <Link href="/explore">
+                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Explore</Text>
+                    </Link>
+                    <Link href="/mypositions">
+                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">My Item</Text>
+                    </Link>
+                    {/* <Link href="/create">
+                        <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Create Swap</Text>
+                    </Link> */}
+                    <Link href="/salelist">
+                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Sale List</Text>
+                    </Link>
+                </Flex>
                 {renderWallet()}
             </Flex>
-        </Flex>
+        </Box>
     )
 }
 

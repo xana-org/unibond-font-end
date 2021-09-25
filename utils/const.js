@@ -106,65 +106,71 @@ export const ETHPRICE_QUERY = `
     }
 `;
 
-export const POSITION_QUERY = `
-    query tokenPosition {
-        position(id: "%1"){
-            id
-            owner
-            pool {
-              id
-            }
-            token0{
-                symbol
-                derivedETH
+export const POSITION_QUERY = (id, blockNumber = undefined) => {
+    return `
+        query tokenPosition {
+            position(
+                first: 1,
+                id: ${id},` +
+                (blockNumber ? `block: { number: ${blockNumber}},` : ``) + 
+            `) {
                 id
-                decimals
-            }
-            token1{
-                symbol
-                derivedETH
+                owner
+                pool {
                 id
-                decimals
-            }
-            pool{
-                id
+                }
+                token0{
+                    symbol
+                    derivedETH
+                    id
+                    decimals
+                }
+                token1{
+                    symbol
+                    derivedETH
+                    id
+                    decimals
+                }
+                pool{
+                    id
+                    liquidity
+                    sqrtPrice
+                    tick
+                    feeGrowthGlobal0X128
+                    feeGrowthGlobal1X128
+                    feeTier
+                }
                 liquidity
-                sqrtPrice
-                tick
-                feeGrowthGlobal0X128
-                feeGrowthGlobal1X128
-                feeTier
-            }
-            liquidity
-            depositedToken0
-            depositedToken1
-            feeGrowthInside0LastX128
-            feeGrowthInside1LastX128
-            tickLower {
-                tickIdx
-                price0
-                price1
-                feeGrowthOutside0X128
-                feeGrowthOutside1X128
-            }
-            tickUpper {
-                tickIdx
-                price0
-                price1
-                feeGrowthOutside0X128
-                feeGrowthOutside1X128
-            }
-            withdrawnToken0
-            withdrawnToken1
-            collectedFeesToken0
-            collectedFeesToken1
-            transaction{
-                timestamp
-                blockNumber
+                depositedToken0
+                depositedToken1
+                feeGrowthInside0LastX128
+                feeGrowthInside1LastX128
+                tickLower {
+                    tickIdx
+                    price0
+                    price1
+                    feeGrowthOutside0X128
+                    feeGrowthOutside1X128
+                }
+                tickUpper {
+                    tickIdx
+                    price0
+                    price1
+                    feeGrowthOutside0X128
+                    feeGrowthOutside1X128
+                }
+                withdrawnToken0
+                withdrawnToken1
+                collectedFeesToken0
+                collectedFeesToken1
+                transaction{
+                    timestamp
+                    blockNumber
+                }
             }
         }
-    }
-`;
+    `;
+}
 
 export const GET_BLOCK_QUERY = (timestamp) => {
     return `
@@ -214,6 +220,7 @@ export const POOL_QUERY = (poolAddress, blockNumber) => {
                 totalValueLockedToken1
                 volumeUSD
                 totalValueLockedUSD
+                createdAtTimestamp
             }
         }
     `

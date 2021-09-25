@@ -99,7 +99,7 @@ const ExplorePage = () => {
                 </Flex>
             );
         const tsupply = parseInt(tSupply) / 1000;
-        return <Text fontWeight="bold" fontSize="30px">{tsupply.toString().match(/^-?\d+(?:\.\d{0,1})?/) + 'K'}</Text>
+        return <Text fontWeight="bold" fontSize="30px" color="#ff0000">{tsupply.toString().match(/^-?\d+(?:\.\d{0,1})?/) + 'K'}</Text>
     }
 
     const onNFTSelect = (item) => {
@@ -118,26 +118,26 @@ const ExplorePage = () => {
     }
 
     return (
-        <Box w="100%" mt="6rem">
+        <Box w="100%" mt="6rem" color="#0E0E0E">
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Box mb="2rem">
                     <Flex flexDirection="row" justifyContent="center">
                         <Image w="60px" src="/images/tokenpage/uni.png" borderRadius="100%"/>
                         <Text fontWeight="bold" fontSize="24px" m="auto 0 auto 1rem">Uniswap V3 Positions</Text>
                     </Flex>
-                    <Flex m="1rem auto" flexDirection="row" justifyContent="center">
-                        <Box border="1px solid #333" p="0.5rem 1rem">
+                    <Flex m="0 auto 1rem auto" flexDirection="row" justifyContent="center">
+                        <Box bg="#FEF0F0" p="0.5rem 1rem" borderRadius="20px">
                             {formattSupply()}
                             <Text textAlign="center" color="#777">items</Text>
                         </Box>
                     </Flex>
-                    <Text textAlign="center" color="#aaa" fontSize="14px">Welcome to the home of Uniswap V3 Positions on Zoracles. Discover the best items in this collection.</Text>
+                    <Text textAlign="center" color="#555" fontSize="14px">Welcome to the home of Uniswap V3 Positions on Zoracles. Discover the best items in this collection.</Text>
                 </Box>
-                <SimpleGrid spacing="1rem" minChildWidth="15rem" w="100%">
+                <SimpleGrid spacing="2rem" minChildWidth="15rem" w="100%">
                     {univ3Data.map((item, index) => {
                         return (
-                            <Box key={index} border="1px solid #2e2e2e" p="2rem 0 0rem 0" borderRadius="10px" cursor="pointer" userSelect="none" 
-                                _hover={{boxShadow: "0px 0px 8px 4px rgba(255, 255, 255, 0.1)"}} transition="0.3s"
+                            <Box key={index} p="2rem 0 0rem 0" borderRadius="10px" cursor="pointer" userSelect="none" bg="#EDF0F3" border="2px solid #EDF0F3"
+                                _hover={{border: "2px solid #FB575F"}} transition="0.3s"
                                 onClick={() => onNFTSelect(item)}
                             >
                                 <Flex flexDirection="row" justifyContent="center">
@@ -152,7 +152,10 @@ const ExplorePage = () => {
                     <Box padding="6" boxShadow="lg">
                         <SkeletonText mt="4" noOfLines={4} spacing="4" />
                     </Box>:
-                    <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={loadMore}>
+                    <Flex
+                        bg="#fff" border="1px solid #ff0000" color="#ff0000" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="1rem auto" onClick={loadMore}
+                        _hover={{bg: "#ff0000", color:"#fff"}}
+                    >
                         <Text fontSize="14px" fontWeight="bold">Load more</Text>
                     </Flex>
                 }

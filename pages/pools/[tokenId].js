@@ -40,11 +40,13 @@ import {
     COINGECKO_URL,
     ONE_DAY_UNIX,
     SCAN_LINK,
+    ETHPRICE_QUERY,
 } from "../../utils/const"
 import LineChart from "../../components/LineChart";
 import BarChart from "../../components/BarChart";
 import dayjs from 'dayjs';
-import Big from "big.js";
+import utc from 'dayjs/plugin/utc'
+dayjs.extend(utc)
 
 const Pool = () => {
     const router = useRouter();
@@ -58,16 +60,32 @@ const Pool = () => {
     const [view, setView] = useState(1);
     const [latestValue, setLatestValue] = useState(undefined);
     const [valueLabel, setValueLabel] = useState(undefined);
-
+    const [ethUSD, setETHUSD] = useState(0);
+    const [blocks, setBlocks] = useState(undefined);
 
     useEffect(async () => {
         let _regTokens = [];
         try {
+            let priceRes = await axios.post(UNIV3_GRAPH_ENDPOINT, {
+                query: ETHPRICE_QUERY,
+            });
+            setETHUSD(parseFloat(priceRes.data.data.bundle.ethPriceUSD));
             const res = await axios.get(COINGECKO_URL);
             if (res && res.data && res.data.tokens) {
                 _regTokens = res.data.tokens.filter(token => token.chainId === 1);
                 setRegTokens(_regTokens);
             }
+            const [t24, t48, tWeek] = useDeltaTimestamps();
+            let block24 = (await axios.post(BLOCK_ENDPOINT, {
+                query: GET_BLOCK_QUERY(t24),
+            })).data.data;
+            let block48 = (await axios.post(BLOCK_ENDPOINT, {
+                query: GET_BLOCK_QUERY(t48),
+            })).data.data;
+            setBlocks({
+                b24: block24.blocks[0].number,
+                b48: block48.blocks[0].number,
+            });
         } catch (e) {
 
         } finally {
@@ -80,7 +98,6 @@ const Pool = () => {
         const startTimestamp = 1619170975
         const endTimestamp = dayjs.unix();
         let skip = 0;
-        let error = false;
         let allFound = false;
 
         let data = [];
@@ -142,23 +159,62 @@ const Pool = () => {
             return dateMap;
         }
         return undefined;
-    }    
+    }
+
+    const getPosFees = (position) => {
+        if (!position) return 0;
+        const { curPrice, token0, token1, fee0, fee1, liquidity } = position;
+        if (!liquidity || !parseInt(liquidity)) return 0;
+        let usdLiq = 0;
+        const f0 = parseFloat(fee0.toString());
+        const f1 = parseFloat(fee1.toString());
+        if (isStableCoin(token1)) {
+            usdLiq = f0 / curPrice + f1;
+        } else if (isStableCoin(token0)) {
+            usdLiq = f1 * curPrice + f0;
+        } else if (isWETH(token1)) {
+            usdLiq = f0 / curPrice * ethUSD + f1 * ethUSD;
+        } else if (isWETH(token0)) {
+            usdLiq = f1 * curPrice * ethUSD + f0 * ethUSD;
+        } else {
+            return 0;
+        }
+        return usdLiq;
+    }
 
     useEffect(async () => {
-        if (router.query && regTokens && !poolLoaded) {
+        if (router.query && regTokens && !poolLoaded && blocks) {
             const { tokenId } = router.query;
             setPoolLoaded(true);
             const _position = await getPositionData(tokenId, regTokens);
+            const _position24 = await getPositionData(tokenId, regTokens, blocks.b24);
+            const _position48 = await getPositionData(tokenId, regTokens, blocks.b48);
+            const curFee = getPosFees(_position);
+            const fee24 = getPosFees(_position24);
+            const fee48 = getPosFees(_position48);
+            const [feeUSD, feeUSDChange] =
+                curFee && fee24 && fee48
+                    ? get2DayChange(curFee, fee24, fee48)
+                    : curFee
+                    ? [parseFloat(curFee), 0]
+                    : [0, 0]
             console.log(_position);
-            setPosition({..._position});
-            const address = _position.poolAddr;
-            const _pool = await getPoolData(address);
-            setPool(_pool);
-            const _chartData = await fetchPoolChartData(address);
-            setChartData(_chartData);
-            console.log("position", _position);
+            if (_position)
+                setPosition({
+                    ..._position,
+                    feeUSD,
+                    feeUSDChange
+                });
+            if (_position && _position.poolAddr) {
+                const address = _position.poolAddr;
+                const _pool = await getPoolData(address);
+                setPool(_pool);
+                const _chartData = await fetchPoolChartData(address);
+                setChartData(_chartData);
+                console.log("_pool", _pool);
+            }
         }
-    }, [router, regTokens]);
+    }, [router, regTokens, blocks]);
 
     useEffect(async () => {
         if (router.query && isWalletConnected(wallet) && regTokens) {
@@ -175,19 +231,12 @@ const Pool = () => {
             query: POOL_QUERY(poolAddress, undefined),
         });
         const current = poolRes.data.data.pools[0];
-        const [t24, t48, tWeek] = useDeltaTimestamps();
-        let block24 = (await axios.post(BLOCK_ENDPOINT, {
-            query: GET_BLOCK_QUERY(t24),
-        })).data.data;
         const poolRes24 = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-            query: POOL_QUERY(poolAddress, block24.blocks[0].number),
+            query: POOL_QUERY(poolAddress, blocks.b24),
         });
         const oneDay = poolRes24.data.data.pools[0];
-        let block48 = (await axios.post(BLOCK_ENDPOINT, {
-            query: GET_BLOCK_QUERY(t48),
-        })).data.data;
         const poolRes48 = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-            query: POOL_QUERY(poolAddress, block48.blocks[0].number),
+            query: POOL_QUERY(poolAddress, blocks.b48),
         });
         const twoDay = poolRes48.data.data.pools[0];
 
@@ -255,7 +304,7 @@ const Pool = () => {
                     <Image src={img0} alt="img0" w="30px" h="30px"/>
                     <Image src={img1} alt="img0" w="30px" h="30px"/>
                     <Text fontSize="20px" margin="auto 10px" fontWeight="bold">{current.token0.symbol + " / " + current.token1.symbol}</Text>
-                    <Text fontSize="12px" margin="auto 0" bg="#2D81FF" p="1px 10px" borderRadius="20px">{tier} %</Text>
+                    <Text fontSize="12px" margin="auto 0" color="#fff" fontWeight="bold" bg="#ff0000" p="1px 10px" borderRadius="20px">{tier} %</Text>
                 </Flex>
             )
         }
@@ -273,7 +322,7 @@ const Pool = () => {
         if (pool) {
             const { img0, img1, current } = pool;
             return (
-                <Box w="100%" borderRadius="10px" bg="#41444F" p="15px">
+                <Box w="100%" borderRadius="10px" >
                     <Text fontWeight="bold" mb="10px">Total Tokens Locked</Text>
                     <Flex flexDirection="row">
                         <Image src={img0} alt="img0" w="26px" h="26px"/>
@@ -289,7 +338,7 @@ const Pool = () => {
             )
         }
         return (
-            <Box w="100%" borderRadius="10px" bg="#41444F" p="15px">
+            <Box w="100%" borderRadius="10px" bg="#fff" p="15px">
                 <Text fontWeight="bold" mb="10px">Total Tokens Locked</Text>
                 <Flex flexDirection="row">
                     <Image src="/images/assets/infinite.svg" alt="img0" w="26px" h="26px"/>
@@ -377,7 +426,7 @@ const Pool = () => {
         if (position) {
             if (!position.liquidity || parseInt(position.liquidity) === 0) {
                 return (
-                    <Flex flexDirection="row" bg="#2C2F36" borderRadius="5px" m="auto 0.5rem">
+                    <Flex flexDirection="row" border="1px solid #FF0000" borderRadius="5px" m="auto 0.5rem">
                         <Box bg="#F65770" w="10px" h="10px" borderRadius="100%" m="auto 0.5rem"/>
                         <Text m="auto 0" fontSize="14px" fontWeight="bold" pr="0.5rem" color="#F65770">Closed</Text>
                     </Flex>
@@ -385,14 +434,14 @@ const Pool = () => {
             }
             if (position.tick >= position.tickLower && position.tick <= position.tickUpper) {
                 return (
-                    <Flex flexDirection="row" bg="#2C2F36" borderRadius="5px" m="auto 0.5rem">
+                    <Flex flexDirection="row" border="1px solid #FF0000" borderRadius="5px" m="auto 0.5rem">
                         <Box bg="#26AE60" w="10px" h="10px" borderRadius="100%" m="auto 0.5rem"/>
-                        <Text m="auto 0" fontSize="14px" fontWeight="bold" pr="0.5rem">In range</Text>
+                        <Text m="auto 0" fontSize="14px" fontWeight="bold" pr="0.5rem" color="#26AE60">In range</Text>
                     </Flex>
                 )
             } else {
                 return (
-                    <Flex flexDirection="row" bg="#2C2F36" borderRadius="5px" m="auto 0.5rem">
+                    <Flex flexDirection="row" border="1px solid #FF0000" borderRadius="5px" m="auto 0.5rem">
                         <Box bg="#FF8F00" w="10px" h="10px" borderRadius="100%" m="auto 0.5rem"/>
                         <Text m="auto 0" fontSize="14px" fontWeight="bold" pr="0.5rem" color="#FF8F00">Out of range</Text>
                     </Flex>
@@ -443,23 +492,23 @@ const Pool = () => {
                     percent = parseInt((tickUpper - tick) / (tickUpper - tickLower) * 100);
             }
             return (
-                <Box bg="#41444F" p="0.5rem" borderRadius="10px">
-                    <Flex flexDirection="row" w={["100%", "100%", "20rem"]}>
+                <Box bg="#EDF0F3" p="0.5rem" w="100%">
+                    <Flex flexDirection="row">
                         {renderToken(symbol0, token0, img0)}
                         <Text ml="auto">{a0}</Text>
-                        {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" bg="#2C2F36" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{percent}%</Text>:(null)}
+                        {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" color="#fff" fontWeight="bold" bg="#FF0000" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{percent}%</Text>:(null)}
                     </Flex>
-                    <Flex flexDirection="row" w={["100%", "100%", "20rem"]} mt="0.5rem">
+                    <Flex flexDirection="row" mt="0.5rem">
                         {renderToken(symbol1, token1, img1)}
                         <Text ml="auto">{a1}</Text>
-                        {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" bg="#2C2F36" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{100 - percent}%</Text>:(null)}
+                        {(liquidity && parseInt(liquidity)) ? <Text fontSize="12px" color="#fff" fontWeight="bold" bg="#FF0000" borderRadius="10px" borderRadius="10px" m="auto 0 auto 1rem" p="0.1rem 0.5rem">{100 - percent}%</Text>:(null)}
                     </Flex>
                 </Box>
             );
         }
     }, [position]);
 
-    const getLiquidityValue = useMemo(() => {
+    const getLiquidityValue = () => {
         if (!position) return "-";
         const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
         if (!liquidity || !parseInt(liquidity)) return "-";
@@ -478,7 +527,7 @@ const Pool = () => {
         if (usdLiq > 1) return usdLiq.toFixed(2);
         if (usdLiq >= 0.00001) return usdLiq.toFixed(6);
         return "<0.00001";
-    }, [position]);
+    };
 
     const getFeeValue = useMemo(() => {
         if (!position) return "-";
@@ -506,10 +555,10 @@ const Pool = () => {
     const feeBox = useMemo(() => {
         if (position) {
             const { fee0, fee1, img0, img1, symbol0, symbol1 } = position;
-            let a0 = fee0;
-            let a1 = fee1;
-            const f0 = parseFloat(fee0);
-            const f1 = parseFloat(fee1);
+            let a0 = parseFloat(fee0.toString()).toFixed(6);
+            let a1 = parseFloat(fee1.toString()).toFixed(6);
+            const f0 = parseFloat(fee0.toString());
+            const f1 = parseFloat(fee1.toString());
             if (f0 < 1 && f0 !== 0) {
                 if (f0 < 0.00001) a0 = "<0.00001";
                 else a0 = f0.toFixed(6);
@@ -519,15 +568,15 @@ const Pool = () => {
                 else a1 = f1.toFixed(6);
             }  else if (f1 > 1) a1 = f1.toFixed(2);
             return (
-                <Box bg="#41444F" p="0.5rem" borderRadius="10px">
-                    <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between">
+                <Box bg="#EDF0F3" p="0.5rem">
+                    <Flex flexDirection="row" justifyContent="space-between">
                         <Flex flexDirection="row">
                             <Image alt="" src={img0} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
                             <Text m="auto 0.5rem">{symbol0}</Text>
                         </Flex>
                         <Text>{a0}</Text>
                     </Flex>
-                    <Flex flexDirection="row" w={["100%", "100%", "20rem"]} justifyContent="space-between" mt="0.5rem">
+                    <Flex flexDirection="row" justifyContent="space-between" mt="0.5rem">
                         <Flex flexDirection="row">
                             <Image alt="" src={img1} w="24px" h="24px" bg="#fff" borderRadius="100%"/>
                             <Text m="auto 0.5rem">{symbol1}</Text>
@@ -550,52 +599,59 @@ const Pool = () => {
         return "-";
     }, [position]);
 
+    const volumeStr = useMemo(() => {
+        if (pool) {
+            return formatDollarAmount(pool.current.volumeUSD);
+        }
+        return "-";
+    }, [pool]);
+
+    const lpPercentStr = useMemo(() => {
+        if (pool && position) {
+            const liquidity = getLiquidityValue();
+            if (liquidity === "<0.00001") return "<1%";
+            if (liquidity === "-") return "-";
+            const percent = liquidity * 100 / parseFloat(pool.current.totalValueLockedUSD);
+            if (percent < 0.01) return "<0.01%";
+            return percent.toFixed(2) + "%";
+        }
+        return "-";
+    }, [pool, position]);
+
+    const createdAtStr = useMemo(() => {
+        if (pool) {
+            const date =  new Date(pool.current.createdAtTimestamp * 1000)
+            return date.toLocaleString('en-US', {
+                weekday: 'short', // long, short, narrow
+                day: 'numeric', // numeric, 2-digit
+                year: 'numeric', // numeric, 2-digit
+                month: 'long', // numeric, 2-digit, long, short, narrow
+                hour: 'numeric', // numeric, 2-digit
+                minute: 'numeric', // numeric, 2-digit
+                second: 'numeric', // numeric, 2-digit
+            });
+        }
+        return "-";
+    }, [pool]);
+
     return (
-        <Box w="100%" mt="6rem">
+        <Box w="100%" mt="8rem" color="#0E0F11">
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Flex flexDirection="row" justifyContent="space-between">
-                    <Box w="400px">
-                        <Box bg="#31333F" borderRadius="10px" m="auto 0" p="20px">
-                            <Flex flexDirection="row" mb="10px">
-                                <Text fontWeight="bold" m="auto 0" >Position Info</Text>
-                                {priceRange}
-                            </Flex>
-                            <Box>
-                                <Flex flexDirection="row" justifyContent="space-between">
-                                    <Text fontSize="14px" m="auto 0">Liquidity</Text>
-                                    <Text fontWeight="bold" fontSize="26px">${getLiquidityValue}</Text>
-                                </Flex>
-                                {liquidityBox}
-                            </Box>
-                            <Box m="20px 0">
-                                <Flex flexDirection="row" justifyContent="space-between">
-                                    <Text fontSize="14px" m="auto 0">Unclaimed fees</Text>
-                                    <Text fontWeight="bold" fontSize="26px">${getFeeValue}</Text>
-                                </Flex>
-                                {feeBox}
-                            </Box>
-                            <Box>
-                                <Flex flexDirection="row">
-                                    <Text fontSize="14px" mr="20px">Owner</Text>
-                                    <Text fontSize="14px" fontWeight="bold">{ownerStr}</Text>
-                                </Flex>
-                            </Box>
-                        </Box>
-                    </Box>
                     <Flex w="calc(100% - 420px)" flexDirection="column">
-                        <Box bg="#31333F" borderRadius="10px" mb="20px">
-                            <Box p="20px 20px">
+                        <Box bg="#fff" mb="20px">
+                            <Box p="20px 20px" bg="#24252C" color="#fff" borderTopRadius="20px">
                                 {poolNameBox}
                             </Box>
-                            <Box m="" h="1px" w="100%" bg="#2D81FF"/>
-                            <Box p="15px 20px">
+                            {/* <Box m="" h="1px" w="100%" bg="#ff0000"/> */}
+                            <Box p="15px 20px" bg="#EDF0F3">
                                 {TTLBox}
                             </Box>
                         </Box>
-                        <Box p="20px 40px" bg="#31333F" borderRadius="10px" w="100%" mb="30px">
+                        <Box p="20px 40px" bg="#EDF0F3" borderRadius="10px" w="100%" mb="30px">
                             {TwoDayData}
                         </Box>
-                        <Flex p="20px 20px" bg="#31333F" w="100%" mb="auto" borderRadius="10px" flexDirection="column">
+                        <Flex p="20px 20px" bg="#EDF0F3" w="100%" mb="auto" borderRadius="10px" flexDirection="column">
                             <Flex flexDirection="row">
                                 <Flex flexDirection="row">
                                     <Text fontWeight="bold">
@@ -609,11 +665,11 @@ const Pool = () => {
                                     </Text>
                                     <Text m="auto 1rem" fontSize="12px" fontWeight="bold">{valueLabel?valueLabel : ''}</Text>
                                 </Flex>
-                                <Flex flexDirection="row" ml="auto" bg="#41444F" p="2px 10px" borderRadius="20px">
-                                    <Flex bg={!view?"#000":"none"} p="0 10px" borderRadius="20px" cursor="pointer" userSelect="none" onClick={() => {setView(0)}}>
+                                <Flex flexDirection="row" ml="auto" bg="#FFF2F1" p="2px 10px" borderRadius="20px">
+                                    <Flex bg={!view?"#FF0000":"none"} color={!view?"#fff":"#FB575F"} p="0 10px" borderRadius="20px" cursor="pointer" userSelect="none" onClick={() => {setView(0)}}>
                                         <Text fontWeight="bold" fontSize="14px">Volume</Text>
                                     </Flex>
-                                    <Flex bg={view?"#000":"none"} p="0 10px" borderRadius="20px" cursor="pointer" userSelect="none" onClick={() => {setView(1)}}>
+                                    <Flex bg={view?"#FF0000":"none"} color={view?"#fff":"#FB575F"} p="0 10px" borderRadius="20px" cursor="pointer" userSelect="none" onClick={() => {setView(1)}}>
                                         <Text fontWeight="bold" fontSize="14px">TVL</Text>
                                     </Flex>
                                 </Flex>
@@ -638,6 +694,59 @@ const Pool = () => {
                             />}
                         </Flex>
                     </Flex>
+                    <Box w="400px">
+                        <Box borderRadius="10px" m="auto 0" pl="10px">
+                            <Flex flexDirection="row" mb="10px">
+                                <Text fontWeight="bold" m="auto 0" >Position Info</Text>
+                                {priceRange}
+                            </Flex>
+                            <Box>
+                                <Flex flexDirection="row" justifyContent="space-between">
+                                    <Text fontSize="14px" m="auto 0">Liquidity</Text>
+                                    <Text fontWeight="bold" fontSize="26px">${getLiquidityValue()}</Text>
+                                </Flex>
+                                {liquidityBox}
+                            </Box>
+                            <Box m="20px 0">
+                                <Flex flexDirection="row" justifyContent="space-between">
+                                    <Text fontSize="14px" m="auto 0">Unclaimed fees</Text>
+                                    <Text fontWeight="bold" fontSize="26px">${getFeeValue}</Text>
+                                </Flex>
+                                {feeBox}
+                            </Box>
+                            <Box>
+                                <Flex flexDirection="row">
+                                    <Text fontSize="14px" mr="20px">Owner</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{ownerStr}</Text>
+                                </Flex>
+                            </Box>
+                            <Box bg="#EDF0F3" p="1.5rem 1rem" mt="20px">
+                                <Text fontWeight="bold">LP Overview</Text>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">Current Volume</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{volumeStr}</Text>
+                                </Flex>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">LP pool %</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{lpPercentStr}</Text>
+                                </Flex>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">Created At</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{createdAtStr}</Text>
+                                </Flex>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">24hr Earning</Text>
+                                    {position && <Flex flexDirection="row">
+                                        <Text fontSize="14px" fontWeight="bold">${position.feeUSD.toFixed(2)}</Text>
+                                        {position.feeUSDChange > 0 ? <ArrowUpIcon m="auto 0" color="rgb(39, 174, 96)"/> : <ArrowDownIcon m="auto 0" color="rgb(253, 64, 64)"/>}
+                                        <Text fontSize="14px" fontWeight="bold" color={position.feeUSDChange > 0 ? "rgb(39, 174, 96)" : "rgb(253, 64, 64)"}>
+                                            ({position.feeUSDChange.toFixed(2)}%)
+                                        </Text>
+                                    </Flex>}
+                                </Flex>
+                            </Box>
+                        </Box>
+                    </Box>
                 </Flex>
             </Flex>
         </Box>
