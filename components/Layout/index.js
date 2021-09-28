@@ -5,6 +5,7 @@ import { useWallet }            from "use-wallet";
 
 import useDidMount              from "../../hooks/useDidMount";
 import { scrollToPosition }     from "../../lib/scroll";
+import Footer                   from "../Footer";
 import Header                   from "../Header";
 
 const Layout = ({ children }) => {
@@ -44,6 +45,7 @@ const Layout = ({ children }) => {
             <Box overflowY="auto" w="100%">
               {children}
             </Box>
+            <Footer/>
         </Box>
     );
   };
