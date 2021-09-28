@@ -1,6 +1,6 @@
 import { Box }                  from "@chakra-ui/core";
 import { useRouter }            from "next/router";
-import { useEffect }            from "react";
+import { useEffect, useState }            from "react";
 import { useWallet }            from "use-wallet";
 
 import useDidMount              from "../../hooks/useDidMount";
@@ -13,7 +13,7 @@ const Layout = ({ children }) => {
     const router = useRouter();
     const { asPath } = router;
     const wallet = useWallet();
-
+    const [isHide, setHide] = useState(true);
     /**
      * Scroll to top on each route change using `asPath` (resolved path),
      * not `pathname` (may be a dynamic route).
@@ -29,7 +29,15 @@ const Layout = ({ children }) => {
       if (window.ethereum && status === "metamask")
         wallet.connect("injected");
     }, []);
-  
+    const handleScroll = (e) => {
+      const bottom = e.target.scrollHeight - e.target.scrollTop === e.target.clientHeight;
+      console.log(e.target.scrollHeight - e.target.scrollTop);
+      console.log(e.target.clientHeight);
+
+      if (bottom) {
+        setHide(true);
+      }
+    }
     // useEffect(() => {
     //   const status = window.localStorage.getItem("Unibond");
     //   console.log("AAAA")
@@ -44,8 +52,9 @@ const Layout = ({ children }) => {
             <Header/>
             <Box overflowY="auto" w="100%">
               {children}
+              <Footer/>
             </Box>
-            <Footer/>
+            {/* {!isHide&&()} */}
         </Box>
     );
   };
