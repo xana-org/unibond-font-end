@@ -15,14 +15,32 @@ const Home = () => {
         </Box>
       </Flex>
       <Flex  maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="row">
-        <Box w='49%' mb="2rem" justifyContent='center' alignItems='center' display='flex'>
+        <Box w='29%' mb="2rem" justifyContent='center' alignItems='center' display='flex'>
           <Text fontWeight="bold" color="#5a5a5a" fontSize="38px">Trade Uniswap V3 NFTs</Text>
         </Box>
-
-        <Box w='49%' mb="2rem">
-          <Image src="/images/nft/8.png" mr="1%" alt="img8" borderRadius="5%"/>
+        <Box w='69%' mb="2rem">
+          <Image src="/images/nft/10.png" mr="1%" alt="img8" borderRadius="5%"/>
         </Box>
       </Flex>
+      <Flex  maxW="80rem" w="100%" m="3rem auto" p="1rem  1rem" flexDirection="row" bg="#edf0f3">
+        <Box w='32%' mr="2%" bg="#FDFDFF" p="1rem  2rem" justifyContent='center' borderRadius='5%' alignItems='center' display='flex' flexDirection='column'>
+          <Image src="/images/icon/1.svg" mt="5%" alt="img8" />
+          <Text fontWeight="bold" color="#000" mt="15%" fontSize="22px">Real-time</Text>
+          <Text fontWeight="regular" color="#a2a2ad" mt="5%" fontSize="15px">With an update rate up to 7 fps, Heatic sensors provide real-time information in addition to historical data.</Text>
+        </Box>
+        <Box w='32%' mr="2%" bg="#FDFDFF" p="1rem  2rem" justifyContent='center' borderRadius='5%' alignItems='center' display='flex' flexDirection='column'>
+          <Image src="/images/icon/2.svg" mt="5%" alt="img8" />
+          <Text fontWeight="bold" color="#000" mt="15%" fontSize="22px">Scalable</Text>
+          <Text fontWeight="regular" color="#a2a2ad" mt="5%" fontSize="15px">Installs in minutes. Each Heatic sensor can cover up to 200 square feet depending on ceiling height.</Text>
+        </Box>
+        <Box w='32%' bg="#FDFDFF" p="1rem  2rem" justifyContent='center' borderRadius='5%' alignItems='center' display='flex' flexDirection='column'>
+          <Image src="/images/icon/3.svg" mt="5%" alt="img8" />
+          <Text fontWeight="bold" color="#000" mt="15%" fontSize="22px">Extensible</Text>
+          <Text fontWeight="regular" color="#a2a2ad" mt="5%" fontSize="15px">Systems integrators and developers can use our open APIs to integrate Heatic data into third party applications.</Text>
+        </Box>
+
+      </Flex>
+
     </Box>
   )
 }
