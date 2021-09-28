@@ -14,14 +14,14 @@ const Home = () => {
           </video>
         </Box>
       </Flex>
-      <Flex  maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="row">
+      {/* <Flex  maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="row">
         <Box w='29%' mb="2rem" justifyContent='center' alignItems='center' display='flex'>
           <Text fontWeight="bold" color="#5a5a5a" fontSize="38px">Trade Uniswap V3 NFTs</Text>
         </Box>
         <Box w='69%' mb="2rem">
           <Image src="/images/nft/10.png" mr="1%" alt="img8" borderRadius="5%"/>
         </Box>
-      </Flex>
+      </Flex> */}
       <Flex  maxW="80rem" w="100%" m="3rem auto" p="1rem  1rem" flexDirection="row" bg="#edf0f3">
         <Box w='32%' mr="2%" bg="#FDFDFF" p="1rem  2rem" justifyContent='center' borderRadius='5%' alignItems='center' display='flex' flexDirection='column'>
           <Image src="/images/icon/1.svg" mt="5%" alt="img8" />
