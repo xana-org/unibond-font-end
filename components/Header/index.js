@@ -1,20 +1,9 @@
-import {
-    Box,
-    Flex,
-    Text,
-    Menu,
-    MenuItem,
-    MenuList,
-    MenuButton,
-} from "@chakra-ui/core";
+import { Box, Flex, Menu, MenuButton, MenuItem, MenuList, Text } from "@chakra-ui/core";
+import { ethers } from "ethers";
 import Link from "next/link";
 import { useWallet } from "use-wallet";
-import { ethers } from "ethers";
-import {
-    shortenWalletAddress,
-    isWalletConnected,
-    getWalletAddress,
-} from "../../lib/wallet";
+
+import { getWalletAddress, isWalletConnected, shortenWalletAddress } from "../../lib/wallet";
 
 const Header = () => {
     const wallet = useWallet();
@@ -73,7 +62,7 @@ const Header = () => {
     return (
         <Box w="100%" color="#0E0F11" borderBottom="1px solid #E7E9EC" position="fixed" top={0} bg="#fff" zIndex={10}>
             <Flex maxW="80rem" w="100%" m="0 auto"  p="1rem 1rem" flexDirection="row" justifyContent="space-between">
-                <Text fontWeight="bold" fontSize="24px">Unibond</Text>
+                <Link href="/"><Text fontWeight="bold" fontSize="24px" cursor="pointer">Unibond</Text></Link>
                 <Flex flexDirection="row" display={["none", "none", "none", "flex"]}>
                     <Link href="/explore">
                         <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Explore</Text>

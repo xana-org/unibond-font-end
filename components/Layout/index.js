@@ -1,10 +1,11 @@
-import { useEffect }            from "react";
-import { useRouter }            from "next/router";
 import { Box }                  from "@chakra-ui/core";
+import { useRouter }            from "next/router";
+import { useEffect }            from "react";
+import { useWallet }            from "use-wallet";
+
 import useDidMount              from "../../hooks/useDidMount";
 import { scrollToPosition }     from "../../lib/scroll";
 import Header                   from "../Header";
-import { useWallet }            from "use-wallet";
 
 const Layout = ({ children }) => {
     const didMount = useDidMount();
@@ -41,7 +42,7 @@ const Layout = ({ children }) => {
         <Box w="100%" bg="#000%" color="#fff">
             <Header/>
             <Box overflowY="auto" w="100%">
-              {children}              
+              {children}
             </Box>
         </Box>
     );
