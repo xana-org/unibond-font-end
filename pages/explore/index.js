@@ -118,7 +118,7 @@ const ExplorePage = () => {
     }
 
     return (
-        <Box w="100%" mt="6rem" color="#0E0E0E">
+        <Box w="100%" height={loading?'71vh':'100%'} mt="6rem" color="#0E0E0E">
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Box mb="2rem">
                     <Flex flexDirection="row" justifyContent="center">

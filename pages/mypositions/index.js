@@ -389,7 +389,7 @@ const MyPositionPage = () => {
     }, [zoraScore]);
 
     return (
-        <Box w="100%" mt="6rem">
+        <Box w="100%" mt="6rem" height={loading?'71vh':'100%'}>
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Flex flexDirection="row" justifyContent="space-between" mb="30px">
                     <Flex flexDirection="row">

@@ -919,7 +919,7 @@ const Pool = () => {
                             </Box>
                             {(confirming&&isSale)&&(
                                 <Box p="1.5rem 1rem" justifyContent="center" alignItems="center" display="flex">
-                                    <Button colorScheme="teal" size="lg" w="50%" disabled>
+                                    <Button bg="#24252C" color="#fff" borderRadius="30px" size="lg" w="50%" disabled>
                                         Buy Item
                                         <Spinner size="sm"/>
                                     </Button>
@@ -927,7 +927,7 @@ const Pool = () => {
                             )}
                             {(!confirming&&isSale)&&(
                                 <Box p="1.5rem 1rem" justifyContent="center" alignItems="center" display="flex">
-                                    <Button colorScheme="teal" size="lg" w="50%" onClick={onBuyItem}>
+                                    <Button bg="#24252C" color="#fff" borderRadius="30px" size="lg" w="50%" onClick={onBuyItem}>
                                         Buy Item
                                     </Button>
                                 </Box>

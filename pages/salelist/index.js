@@ -329,20 +329,20 @@ const SaleList = () => {
       if (confirming) {
         return (
             <Flex bg="#2D81FF80" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem">
-                <Text fontWeight="bold" fontSize="14px" mr="0.5rem">Buy Item</Text>
+                <Text fontWeight="bold" fontSize="14px" mr="0.5rem">BUY NOW</Text>
                 <Spinner size="sm"/>
             </Flex>
         );
       }
       return (
         <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem" onClick={onBuyItem}>
-            <Text fontWeight="bold" fontSize="14px" mr="0.5rem">Buy Item</Text>
+            <Text fontWeight="bold" fontSize="14px" mr="0.5rem">BUY NOW</Text>
         </Flex>
       );
     }
     return (
       <Flex bg="#aaa" p="0.5rem 1rem" borderRadius="10px" userSelect="none" ml="1rem">
-          <Text fontWeight="bold" fontSize="14px" mr="0.5rem">Buy Item</Text>
+          <Text fontWeight="bold" fontSize="14px" mr="0.5rem">BUY NOW</Text>
       </Flex>
     );
   }
@@ -403,7 +403,7 @@ const SaleList = () => {
   }
 
   return (
-    <Box w="100%" mt="6rem">
+    <Box w="100%" mt="6rem" height={loading?'71vh':'72vh'}>
       {renderModal()}
       <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
         {renderFilterOption()}

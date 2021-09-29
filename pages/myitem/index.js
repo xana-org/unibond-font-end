@@ -520,7 +520,7 @@ const MyItemPage = () => {
     }
 
     return (
-        <Box w="100%" mt="6rem">
+        <Box w="100%" mt="6rem" height={loading?'71vh':'100%'}>
             {renderModal()}
             {loading?
                 <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
