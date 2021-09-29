@@ -5,9 +5,11 @@ import {
     Flex, 
     Box,
     Text,
-    SimpleGrid,
+    Button,
     Image,
     Link,
+    Spinner,
+    useToast
 } from "@chakra-ui/core";
 import {
     ArrowDownIcon,
@@ -41,6 +43,9 @@ import {
     ONE_DAY_UNIX,
     SCAN_LINK,
     ETHPRICE_QUERY,
+    UNIBOND_GRAPH_ENDPOINT,
+    IS_ON_SALE_QUERY,
+    ONSALE_ASSETS_QUERY,
 } from "../../utils/const"
 import LineChart from "../../components/LineChart";
 import BarChart from "../../components/BarChart";
@@ -51,6 +56,7 @@ dayjs.extend(utc)
 const Pool = () => {
     const router = useRouter();
     const wallet = useWallet();
+    const [confirming, setConfirming] = useState(false);
     const [initiated, setInitiated] = useState(false);
     const [poolLoaded, setPoolLoaded] = useState(false);
     const [pool, setPool] = useState(null);
@@ -62,7 +68,10 @@ const Pool = () => {
     const [valueLabel, setValueLabel] = useState(undefined);
     const [ethUSD, setETHUSD] = useState(0);
     const [blocks, setBlocks] = useState(undefined);
-
+    const [percent, setPercent] = useState(0);
+    const [isSale, setSale] = useState(false);
+    const [saleItem, setSaleItem] = useState({});
+    const toast = useToast();
     useEffect(async () => {
         let _regTokens = [];
         try {
@@ -75,16 +84,35 @@ const Pool = () => {
                 _regTokens = res.data.tokens.filter(token => token.chainId === 1);
                 setRegTokens(_regTokens);
             }
-            const [t24, t48, tWeek] = useDeltaTimestamps();
+            const [t1, t2, t3,t4,t5, tWeek] = useDeltaTimestamps();
             let block24 = (await axios.post(BLOCK_ENDPOINT, {
-                query: GET_BLOCK_QUERY(t24),
+                query: GET_BLOCK_QUERY(t1),
             })).data.data;
+            console.log()
             let block48 = (await axios.post(BLOCK_ENDPOINT, {
-                query: GET_BLOCK_QUERY(t48),
+                query: GET_BLOCK_QUERY(t2),
             })).data.data;
+            let block72 = (await axios.post(BLOCK_ENDPOINT, {
+                query: GET_BLOCK_QUERY(t3),
+            })).data.data;
+            let block96 = (await axios.post(BLOCK_ENDPOINT, {
+                query: GET_BLOCK_QUERY(t4),
+            })).data.data;
+            let block120 = (await axios.post(BLOCK_ENDPOINT, {
+                query: GET_BLOCK_QUERY(t5),
+            })).data.data;
+            console.log("b24:",block24.blocks[0].number)
+            console.log("b24:",block48.blocks[0].number)
+            console.log("b24:",block72.blocks[0].number)
+            console.log("b24:",block96.blocks[0].number)
+            console.log("b24:",block120.blocks[0].number)
+
             setBlocks({
                 b24: block24.blocks[0].number,
                 b48: block48.blocks[0].number,
+                b72: block72.blocks[0].number,
+                b96: block96.blocks[0].number,
+                b120: block120.blocks[0].number,
             });
         } catch (e) {
 
@@ -185,10 +213,65 @@ const Pool = () => {
     useEffect(async () => {
         if (router.query && regTokens && !poolLoaded && blocks) {
             const { tokenId } = router.query;
+            let saleData = await axios.post(UNIBOND_GRAPH_ENDPOINT, {
+                query: IS_ON_SALE_QUERY.replace('%1', tokenId)
+            });
+            console.log("query:", IS_ON_SALE_QUERY.replace('%1', tokenId));
+
+            console.log("saleData:", saleData);
+            if(saleData.data.data.error == undefined&&saleData.data.data.swapLists.length == 0) {
+                setSale(false);
+            } else {
+                setSale(true);
+                setSaleItem(saleData.data.data.swapLists[0]);
+            }
             setPoolLoaded(true);
+            let count = 0;
+
             const _position = await getPositionData(tokenId, regTokens);
             const _position24 = await getPositionData(tokenId, regTokens, blocks.b24);
             const _position48 = await getPositionData(tokenId, regTokens, blocks.b48);
+            const _position72 = await getPositionData(tokenId, regTokens, blocks.b72);
+            const _position96 = await getPositionData(tokenId, regTokens, blocks.b96);            
+            const _position120 = await getPositionData(tokenId, regTokens, blocks.b120);
+            console.log("positoin", _position)
+
+            console.log("positoin", _position24)
+            console.log("positoin", _position48)
+            console.log("positoin", _position72)
+            console.log("positoin", _position96)
+
+            if(_position !== undefined && _position!==null) {
+                if (_position.tick >= _position.tickLower && _position.tick <= _position.tickUpper) {
+                    count++;
+                }
+            }
+            if(_position24 !== undefined && _position24!==null) {
+                if (_position24.tick >= _position24.tickLower && _position24.tick <= _position24.tickUpper) {
+                    count++;
+                }
+            }            
+            if(_position72 !== undefined && _position72!==null) {
+                if (_position72.tick >= _position72.tickLower && _position72.tick <= _position72.tickUpper) {
+                    count++;
+                }
+            }            
+            if(_position48 !== undefined && _position48!==null) {
+                if (_position48.tick >= _position48.tickLower && _position48.tick <= _position48.tickUpper) {
+                    count++;
+                }
+            }
+            if(_position96 !== undefined && _position96!==null) {
+                if (_position96.tick >= _position96.tickLower && _position96.tick <= _position96.tickUpper) {
+                    count++;
+                }
+            }
+            if(_position120 !== undefined && _position120!==null) {
+                if (_position120.tick >= _position120.tickLower && _position120.tick <= _position120.tickUpper) {
+                    count++;
+                }
+            }
+            setPercent(count/6);
             const curFee = getPosFees(_position);
             const fee24 = getPosFees(_position24);
             const fee48 = getPosFees(_position48);
@@ -198,7 +281,6 @@ const Pool = () => {
                     : curFee
                     ? [parseFloat(curFee), 0]
                     : [0, 0]
-            console.log(_position);
             if (_position)
                 setPosition({
                     ..._position,
@@ -617,6 +699,81 @@ const Pool = () => {
         }
         return "-";
     }, [pool, position]);
+    const onBuyItem = async () => {
+        try {
+          setConfirming(true);
+          const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+          const signer = await provider.getSigner();
+          let hash = "";
+          if (buyItem.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead") {
+            hash = await swapWithETH(UNIBOND_ADDRESS, parseFloat(saleItem.amount) / Math.pow(10, 18), saleItem.swapId, signer);
+          } else {
+            hash = await swapWithToken(UNIBOND_ADDRESS, saleItem.swapId, signer);
+          }
+          if (hash) {
+            toast({
+                title: "Success",
+                description: "Transaction is confirmed.",
+                status: "success",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
+          } else {
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
+          }
+        } catch(e) {
+          toast({
+              title: "Error",
+              description: "Transaction is reverted.",
+              status: "error",
+              duration: 5000,
+              isClosable: true,
+              position: "top-right"
+          });
+        } finally {
+          setConfirming(false);
+        }
+      }
+    const APY = useMemo(()=>{
+        if (pool && position) {
+            const fee = pool.volumeUSD * (parseFloat(pool.current.feeTier) / 1000000);
+            const volume = parseFloat(pool.volumeUSD);
+            const apy = Math.pow(1 + fee/volume, 365); 
+            return apy.toFixed(2);
+        }
+        return "-";
+    });
+    const AssetValue = useMemo(()=>{
+        if (pool && position) {
+            const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
+            if (!liquidity || !parseInt(liquidity)) return "-";
+            let usdLiq = 0;
+            if (isStableCoin(token1)) {
+                usdLiq = amount0 / curPrice + amount1;
+            } else if (isStableCoin(token0)) {
+                usdLiq = amount1 * curPrice + amount0;
+            } else if (isWETH(token1)) {
+                usdLiq = amount0 / curPrice * ethUSD + amount1 * ethUSD;
+            } else if (isWETH(token0)) {
+                usdLiq = amount1 * curPrice * ethUSD + amount0 * ethUSD;
+            } else {
+                return "-";
+            }
+            const fee = parseFloat(position.feeUSD) ;
+            console.log("Fee:", fee);
+            const price = fee+usdLiq; 
+            return price.toFixed(2);
+        }
+        return "-";
+    })
 
     const createdAtStr = useMemo(() => {
         if (pool) {
@@ -640,7 +797,7 @@ const Pool = () => {
                 <Flex flexDirection="row" justifyContent="space-between">
                     <Flex w="calc(100% - 420px)" flexDirection="column">
                         <Box bg="#fff" mb="20px">
-                            <Box p="20px 20px" bg="#24252C" color="#fff" borderTopRadius="20px">
+                            <Box p="20px 20px" bg="#24252c00" borderTopRadius="20px">
                                 {poolNameBox}
                             </Box>
                             {/* <Box m="" h="1px" w="100%" bg="#ff0000"/> */}
@@ -680,7 +837,7 @@ const Pool = () => {
                                 setValue={setLatestValue}
                                 value={latestValue}
                                 label={valueLabel}
-                                minHeight={340}
+                                minHeight={isSale?370:330}
                                 color="#56B2A4"
                             />}
                             {view === 0 && <BarChart
@@ -689,7 +846,7 @@ const Pool = () => {
                                 setValue={setLatestValue}
                                 value={latestValue}
                                 label={valueLabel}
-                                minHeight={340}
+                                minHeight={isSale?370:330}
                                 color="#56B2A4"
                             />}
                         </Flex>
@@ -745,6 +902,36 @@ const Pool = () => {
                                     </Flex>}
                                 </Flex>
                             </Box>
+                            <Box bg="#EDF0F3" p="1.5rem 1rem" mt="20px">
+                                <Text fontWeight="bold">Key Statistics</Text>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">APY</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{APY}%</Text>
+                                </Flex>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">Time spent in range</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{percent.toFixed(2)}%</Text>
+                                </Flex>
+                                <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
+                                    <Text fontSize="14px">Price</Text>
+                                    <Text fontSize="14px" fontWeight="bold">{AssetValue}$</Text>
+                                </Flex>
+                            </Box>
+                            {(confirming&&isSale)&&(
+                                <Box p="1.5rem 1rem" justifyContent="center" alignItems="center" display="flex">
+                                    <Button colorScheme="teal" size="lg" w="50%" disabled>
+                                        Buy Item
+                                        <Spinner size="sm"/>
+                                    </Button>
+                                </Box>
+                            )}
+                            {(!confirming&&isSale)&&(
+                                <Box p="1.5rem 1rem" justifyContent="center" alignItems="center" display="flex">
+                                    <Button colorScheme="teal" size="lg" w="50%" onClick={onBuyItem}>
+                                        Buy Item
+                                    </Button>
+                                </Box>
+                            )}
                         </Box>
                     </Box>
                 </Flex>
