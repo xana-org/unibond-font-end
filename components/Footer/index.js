@@ -5,7 +5,7 @@ import { getWalletAddress, isWalletConnected, shortenWalletAddress } from "../..
 
 const Footer = () => {
     return (
-        <Box w="100%" color="#FFF" mt="auto" position="fixed" bottom={0} bg="#24252c" zIndex={10}>
+        <Box w="100%" color="#FFF" mt="auto" bottom={0} bg="#24252c" zIndex={10}>
             <Flex maxW="80rem" w="100%"  flexDirection="row" justifyContent="center">
 
                 <Flex w="25%" m="0 auto"  p="1rem 1rem"  flexDirection="column" >
