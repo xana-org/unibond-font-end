@@ -51,6 +51,7 @@ import BigNumber from "bignumber.js";
 const SaleList = () => {
   const toast = useToast();
   const wallet = useWallet();
+  const router = useRouter();
   const [showAll, setShowAll] = useState(false);
   const [offset, setOffset] = useState(0);
   const [approved, setApproved] = useState(false);
@@ -200,7 +201,7 @@ const SaleList = () => {
     if (item.status === "1") {
       return (
         <Flex flexDirection="row" m="">
-            <Flex bg="#2D81FF" p="0.5rem 1.5rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onBuy(item)}>
+            <Flex bg="#2D81FF" p="0.5rem 1.5rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onNFTSelect(item)}>
                 <Text fontSize="12px">Buy</Text>
             </Flex>
         </Flex>
@@ -284,6 +285,7 @@ const SaleList = () => {
       const provider = new ethers.providers.Web3Provider(wallet.ethereum);
       const signer = await provider.getSigner();
       let hash = "";
+      console.log("item: ", buyItem);
       if (buyItem.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead") {
         hash = await swapWithETH(UNIBOND_ADDRESS, parseFloat(buyItem.amount) / Math.pow(10, 18), buyItem.swapId, signer);
       } else {
@@ -383,7 +385,9 @@ const SaleList = () => {
     setOffset(0);
     loadData(0, e.target.value);
   }
-
+  const onNFTSelect = (item) => {
+    router.push("/pools/" + item.tokenId)
+  }
   const renderFilterOption = () => {
     return (
       <Box mb="30px">

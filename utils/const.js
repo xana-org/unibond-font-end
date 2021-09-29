@@ -35,8 +35,11 @@ export const IS_ON_SALE_QUERY = `
             status: 1
         }) {
             swapId,
-            payToken,
-            amount
+            amount,
+            assetType,
+            creator,
+            status,
+            buyer,
         }
     }
 `;
@@ -66,7 +69,7 @@ export const OWNED_ASSETS_QUERY = `
 export const ONSALE_ASSETS_QUERY = `
     query onSaleAssets {
         swapLists(first: 100, where: {
-            creator: "%1",
+            creator: %1,
             status: 1
         }) {
             swapId
@@ -110,7 +113,7 @@ export const POSITION_QUERY = (id, blockNumber = undefined) => {
     return `
         query tokenPosition {
             position(
-                first: 1,
+                first: 1000,
                 id: ${id},` +
                 (blockNumber ? `block: { number: ${blockNumber}},` : ``) + 
             `) {

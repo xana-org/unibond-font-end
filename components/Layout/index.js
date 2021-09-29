@@ -50,10 +50,10 @@ const Layout = ({ children }) => {
     return (
         <Box w="100%" bg="#000%" color="#fff">
             <Header/>
-            <Box overflowY="auto" w="100%">
+            <Box overflowY="auto" w="100%" p="bottom" >
               {children}
-              <Footer/>
             </Box>
+            <Footer />
             {/* {!isHide&&()} */}
         </Box>
     );
