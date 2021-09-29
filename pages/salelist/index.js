@@ -414,7 +414,7 @@ const SaleList = () => {
                       _hover={{boxShadow: "0px 0px 8px 4px rgba(255, 255, 255, 0.1)"}} transition="0.3s"
                   >
                     {renderStatus(item)}
-                      <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onBuy(item)}>
+                      <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item)}>
                           <Image src={item.image} width={150} height={200} alt=""/>
                       </Flex>
                       <Text fontSize="12px" p="1rem 0.5rem 0 0.5rem" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
