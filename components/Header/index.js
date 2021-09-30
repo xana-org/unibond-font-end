@@ -65,16 +65,16 @@ const Header = () => {
                 <Link href="/"><Text fontWeight="bold" fontSize="24px" cursor="pointer">Unibond</Text></Link>
                 <Flex flexDirection="row" display={["none", "none", "none", "flex"]}>
                     <Link href="/explore">
-                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Explore</Text>
+                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Uni</Text>
                     </Link>
                     <Link href="/mypositions">
-                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">My Item</Text>
+                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">My NFTs</Text>
                     </Link>
                     {/* <Link href="/create">
                         <Text fontWeight="bold" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#fff"}} color="#858585" transition="0.2s">Create Swap</Text>
                     </Link> */}
                     <Link href="/salelist">
-                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Sale List</Text>
+                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#FB575F"}} color="#0E0F11" transition="0.2s">Bond Sale</Text>
                     </Link>
                 </Flex>
                 {renderWallet()}

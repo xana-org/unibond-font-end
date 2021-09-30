@@ -167,14 +167,14 @@ const SaleList = () => {
     return (
       <Box p="10px 0rem">
         <Flex flexDirection="row" justifyContent="space-between">
-          <Text fontSize="12px" color="#aaa" m="auto 10px auto 0">on sale for</Text>
+          <Text fontSize="12px" color="#000" m="auto 10px auto 0">on sale for</Text>
           <Flex flexDirection="row">
             <Image src={sAsset.img} h="20px"/>
             <Text fontSize="14px" m="auto 5px auto 5px" fontWeight="bold">{amount.toFixed(4)}</Text>
-            <Text fontSize="14px" color="#aaa" m="auto 0">{sAsset.name}</Text>
+            <Text fontSize="14px" color="#000" m="auto 0">{sAsset.name}</Text>
           </Flex>
         </Flex>
-        <Text textAlign="right" fontSize="14px" color="#fff" m="auto 0 auto" fontWeight="bold">${getUSDPrice(index, amount).toFixed(3)} (USD)</Text>
+        <Text textAlign="right" fontSize="14px" color="#000" m="auto 0 auto" fontWeight="bold">${getUSDPrice(index, amount).toFixed(3)} (USD)</Text>
       </Box>
     )
   }
@@ -200,7 +200,7 @@ const SaleList = () => {
     if (!wallet || !isWalletConnected(wallet)) return (null);
     if (item.status === "1") {
       return (
-        <Flex flexDirection="row" m="">
+        <Flex flexDirection="row">
             <Flex bg="#2D81FF" p="0.5rem 1.5rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onNFTSelect(item)}>
                 <Text fontSize="12px">Buy</Text>
             </Flex>
@@ -417,8 +417,8 @@ const SaleList = () => {
                       <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item)}>
                           <Image src={item.image} width={150} height={200} alt=""/>
                       </Flex>
-                      <Text fontSize="12px" p="1rem 0.5rem 0 0.5rem" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
-                      <Box p="0 10px">
+                      <Text fontSize="12px" p="1rem 0.5rem 0 0.5rem" color="#000" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
+                      <Box p="0 10px" color="#000">
                         {renderPrice(item)}
                       </Box>
                       {renderAction(item)}

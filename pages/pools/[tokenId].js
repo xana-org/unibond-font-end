@@ -72,6 +72,14 @@ const Pool = () => {
     const [isSale, setSale] = useState(false);
     const [saleItem, setSaleItem] = useState({});
     const toast = useToast();
+    const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
+
+    useEffect(async () => {
+      let priceRes = await axios.post(graphqlEndpoint, {
+        query: ETHPRICE_QUERY,
+      });
+      setETHUSD(parseFloat(priceRes.data.data.bundle.ethPriceUSD));
+    }, []);
     useEffect(async () => {
         let _regTokens = [];
         try {
@@ -753,24 +761,31 @@ const Pool = () => {
     });
     const AssetValue = useMemo(()=>{
         if (pool && position) {
-            const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
-            if (!liquidity || !parseInt(liquidity)) return "-";
-            let usdLiq = 0;
-            if (isStableCoin(token1)) {
-                usdLiq = amount0 / curPrice + amount1;
-            } else if (isStableCoin(token0)) {
-                usdLiq = amount1 * curPrice + amount0;
-            } else if (isWETH(token1)) {
-                usdLiq = amount0 / curPrice * ethUSD + amount1 * ethUSD;
-            } else if (isWETH(token0)) {
-                usdLiq = amount1 * curPrice * ethUSD + amount0 * ethUSD;
+            if (isSale) {
+                const amount = parseFloat(saleItem.amount) / Math.pow(10, 18);
+                const price = amount * ethUSD;
+                return price.toFixed(2);
             } else {
-                return "-";
+                const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
+                if (!liquidity || !parseInt(liquidity)) return "-";
+                let usdLiq = 0;
+                if (isStableCoin(token1)) {
+                    usdLiq = amount0 / curPrice + amount1;
+                } else if (isStableCoin(token0)) {
+                    usdLiq = amount1 * curPrice + amount0;
+                } else if (isWETH(token1)) {
+                    usdLiq = amount0 / curPrice * ethUSD + amount1 * ethUSD;
+                } else if (isWETH(token0)) {
+                    usdLiq = amount1 * curPrice * ethUSD + amount0 * ethUSD;
+                } else {
+                    return "-";
+                }
+                const fee = parseFloat(position.feeUSD) ;
+                console.log("Fee:", fee);
+                const price = fee+usdLiq; 
+                return price.toFixed(2);
             }
-            const fee = parseFloat(position.feeUSD) ;
-            console.log("Fee:", fee);
-            const price = fee+usdLiq; 
-            return price.toFixed(2);
+            
         }
         return "-";
     })

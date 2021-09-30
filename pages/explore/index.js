@@ -123,7 +123,7 @@ const ExplorePage = () => {
                 <Box mb="2rem">
                     <Flex flexDirection="row" justifyContent="center">
                         <Image w="60px" src="/images/tokenpage/uni.png" borderRadius="100%"/>
-                        <Text fontWeight="bold" fontSize="24px" m="auto 0 auto 1rem">Uniswap V3 Positions</Text>
+                        <Text fontWeight="bold" fontSize="24px" m="auto 0 auto 1rem">Uniswap v3 NFTs</Text>
                     </Flex>
                     <Flex m="0 auto 1rem auto" flexDirection="row" justifyContent="center">
                         <Box bg="#FEF0F0" p="0.5rem 1rem" borderRadius="20px">
@@ -131,7 +131,7 @@ const ExplorePage = () => {
                             <Text textAlign="center" color="#777">items</Text>
                         </Box>
                     </Flex>
-                    <Text textAlign="center" color="#555" fontSize="14px">Welcome to the home of Uniswap V3 Positions on Zoracles. Discover the best items in this collection.</Text>
+                    <Text textAlign="center" color="#555" fontSize="14px">These represent all the NFTs created by Uniswap v3. Feel free to browse and uncover the power of concentrated liquidity.</Text>
                 </Box>
                 <SimpleGrid spacing="2rem" minChildWidth="15rem" w="100%">
                     {univ3Data.map((item, index) => {
