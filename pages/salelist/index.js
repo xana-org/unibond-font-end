@@ -403,7 +403,7 @@ const SaleList = () => {
   }
 
   return (
-    <Box w="100%" mt="6rem" height={loading?'71vh':'72vh'}>
+    <Box w="100%" mt="6rem" minHeight="71vh">
       {renderModal()}
       <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
         {renderFilterOption()}

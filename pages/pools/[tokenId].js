@@ -929,7 +929,7 @@ const Pool = () => {
                                 </Flex>
                                 <Flex flexDirection="row" justifyContent="space-between" m="10px 0">
                                     <Text fontSize="14px">Price</Text>
-                                    <Text fontSize="14px" fontWeight="bold">{AssetValue}$</Text>
+                                    <Text fontSize="14px" fontWeight="bold">${AssetValue}</Text>
                                 </Flex>
                             </Box>
                             {(confirming&&isSale)&&(
