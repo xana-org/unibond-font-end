@@ -4,7 +4,7 @@ const IS_PROD = true;
 export const ZORA_SCORE_API = "https://zora.cc/rating/";
 
 export const UNI_V3_NFT_POSITIONS_ADDRESS = "0xc36442b4a4522e871399cd717abdd847ab11fe88";
-export const UNIBOND_ADDRESS = "0x7cB4867950Bc819bb5aA5269a30E651901e1b269";
+export const UNIBOND_ADDRESS = "0xdeAEc5b88596116bdfE08F5c9E1437D8d027C6E1";
 
 export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
