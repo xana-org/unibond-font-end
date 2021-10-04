@@ -1,30 +1,14 @@
-import { useEffect, useState, useMemo, useRef }  from "react";
+import { Box, Flex, Image, Link, SimpleGrid, SkeletonText, Text } from "@chakra-ui/core";
+import { ArrowDownIcon, ArrowUpIcon, ExternalLinkIcon } from "@chakra-ui/icons";
 import axios                    from "axios";
 import { ethers }               from "ethers";
-import {
-    Flex, 
-    Box,
-    Text,
-    SimpleGrid,
-    Image,
-    Link,
-    SkeletonText,
-} from "@chakra-ui/core";
-import {
-    ArrowDownIcon,
-    ArrowUpIcon,
-    ExternalLinkIcon,
-} from "@chakra-ui/icons";
-import { useWallet } from "use-wallet";
 import { useRouter } from "next/router";
-import {
-    isWalletConnected,
-    getWalletAddress
-} from "../../lib/wallet";
-import {
-    getBalanceOf,
-    getTokenURI,
-} from "../../contracts/erc721";
+import { useEffect, useMemo, useRef, useState }  from "react";
+import { useWallet } from "use-wallet";
+
+import { getBalanceOf, getTokenURI } from "../../contracts/erc721";
+import { getWalletAddress, isWalletConnected } from "../../lib/wallet";
+
 const base64  = require("base-64");
 import {
     ETHPRICE_QUERY,
@@ -389,7 +373,7 @@ const MyPositionPage = () => {
     }, [zoraScore]);
 
     return (
-        <Box w="100%" mt="6rem" height={loading?'71vh':'100%'}>
+        <Box w="100%" mt="6rem" minHeight="71vh">
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
                 <Flex flexDirection="row" justifyContent="space-between" mb="30px">
                     <Flex flexDirection="row">

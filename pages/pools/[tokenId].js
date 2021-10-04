@@ -764,7 +764,7 @@ const Pool = () => {
             if (isSale) {
                 const amount = parseFloat(saleItem.amount) / Math.pow(10, 18);
                 const price = amount * ethUSD;
-                return price.toFixed(2);
+                return price.toLocaleString();
             } else {
                 const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
                 if (!liquidity || !parseInt(liquidity)) return "-";
@@ -783,7 +783,7 @@ const Pool = () => {
                 const fee = parseFloat(position.feeUSD) ;
                 console.log("Fee:", fee);
                 const price = fee+usdLiq; 
-                return price.toFixed(2);
+                return price.toLocaleString();
             }
             
         }
