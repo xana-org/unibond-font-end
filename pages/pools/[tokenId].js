@@ -448,7 +448,7 @@ const Pool = () => {
         if (pool) {
             const { tvlUSD, tvlUSDChange, volumeUSD, volumeUSDChange, current } = pool;
             return (
-                <Flex flexDirection="row" justifyContent="space-between">
+                <Flex flexDirection={["column", "column", "column", "row"]} justifyContent="space-between">
                     <Box>
                         <Text fontSize="14px">Total Value Locked</Text>
                         <Text fontSize="20px" fontWeight="bold" p="5px 0">{formatDollarAmount(tvlUSD)}</Text>
@@ -459,7 +459,7 @@ const Pool = () => {
                             </Text>
                         </Flex>
                     </Box>
-                    <Box h="80px" w="1px" bg="#fff"/>
+                    <Box h={["1px", "1px", "1px", "80px"]} w={["100%", "100%", "100%", "1px"]} bg="#fff" m={["10px 0", "10px 0", "10px 0", "0"]}/>
                     <Box>
                         <Text fontSize="14px">Volume 24h</Text>
                         <Text fontSize="20px" fontWeight="bold" p="5px 0">{formatDollarAmount(volumeUSD)}</Text>
@@ -470,7 +470,7 @@ const Pool = () => {
                             </Text>
                         </Flex>
                     </Box>
-                    <Box h="80px" w="1px" bg="#fff"/>
+                    <Box h={["1px", "1px", "1px", "80px"]} w={["100%", "100%", "100%", "1px"]} bg="#fff" m={["10px 0", "10px 0", "10px 0", "0"]}/>
                     <Box>
                         <Text fontSize="14px">24h Fees</Text>
                         <Text fontSize="20px" fontWeight="bold" p="5px 0">{formatDollarAmount(volumeUSD * (parseFloat(current.feeTier) / 1000000))}</Text>
@@ -809,8 +809,8 @@ const Pool = () => {
     return (
         <Box w="100%" mt="8rem" color="#0E0F11">
             <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
-                <Flex flexDirection="row" justifyContent="space-between">
-                    <Flex w="calc(100% - 420px)" flexDirection="column">
+                <Flex flexDirection={["column", "column", "column", "row"]} justifyContent="space-between">
+                    <Flex w={["100%", "100%", "100%", "calc(100% - 420px)"]} flexDirection="column">
                         <Box bg="#fff" mb="20px">
                             <Box p="20px 20px" bg="#24252c00" borderTopRadius="20px">
                                 {poolNameBox}
@@ -866,7 +866,7 @@ const Pool = () => {
                             />}
                         </Flex>
                     </Flex>
-                    <Box w="400px">
+                    <Box w={["100%", "100%", "100%", "400px"]} mt={["30px", "30px", "30px", "0"]}>
                         <Box borderRadius="10px" m="auto 0" pl="10px">
                             <Flex flexDirection="row" mb="10px">
                                 <Text fontWeight="bold" m="auto 0" >Position Info</Text>

@@ -4,14 +4,14 @@ const IS_PROD = true;
 export const ZORA_SCORE_API = "https://zora.cc/rating/";
 
 export const UNI_V3_NFT_POSITIONS_ADDRESS = "0xc36442b4a4522e871399cd717abdd847ab11fe88";
-export const UNIBOND_ADDRESS = "0xdeAEc5b88596116bdfE08F5c9E1437D8d027C6E1";
+export const UNIBOND_ADDRESS = IS_PROD ? "0x43749Ed0A562503aB52005E4354391F85E38F189" : "0xdeAEc5b88596116bdfE08F5c9E1437D8d027C6E1";
 
 export const WETH_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
 export const COINGECKO_URL = 'https://tokens.coingecko.com/uniswap/all.json';
 
 export const UNISWAPV3IDS = IS_PROD ? "https://api.thegraph.com/subgraphs/name/cryptodev7/uniswapv3ids": "";
-export const UNIBOND_GRAPH_ENDPOINT = "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond";
+export const UNIBOND_GRAPH_ENDPOINT = IS_PROD ? "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond-mainnet" : "https://api.thegraph.com/subgraphs/name/cryptodev7/unibond";
 export const UNIV3_GRAPH_ENDPOINT = IS_PROD ? "https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3" : "https://api.thegraph.com/subgraphs/name/cryptodev7/univ3rinkeby";
 export const BLOCK_ENDPOINT = IS_PROD ? "https://api.thegraph.com/subgraphs/name/blocklytics/ethereum-blocks" : "https://api.thegraph.com/subgraphs/name/blocklytics/rinkeby-blocks";
 
@@ -21,8 +21,8 @@ export const SCAN_LINK = IS_PROD ? "https://etherscan.io": "https://rinkeby.ethe
 
 export const SUPPORT_ASSETS = [
     {name: "ETH", img: "/images/assets/eth.png", address: "0x000000000000000000000000000000000000dEaD", decimals: 18},
-    {name: "WETH", img: "/images/assets/WETH.png", address: "0xdf032bc4b9dc2782bb09352007d4c57b75160b15", decimals: 18},
-    {name: "DAI", img: "/images/assets/DAI.png", address: "0xc7ad46e0b8a400bb3c915120d284aafba8fc4735", decimals: 18},
+    {name: "WETH", img: "/images/assets/WETH.png", address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", decimals: 18},
+    {name: "DAI", img: "/images/assets/DAI.png", address: "0x6b175474e89094c44da98b954eedeac495271d0f", decimals: 18},
     //{name: "USDT", img: "/images/assets/USDT.png"},
 ];
 

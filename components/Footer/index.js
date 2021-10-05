@@ -1,48 +1,49 @@
-import { Box, Flex, Menu, MenuButton, MenuItem, MenuList, Text } from "@chakra-ui/core";
+import { Box, Flex, Link as ChakraLink, Text } from "@chakra-ui/core";
 import Link from "next/link";
 
 const Footer = () => {
     return (
         <Box w="100%" color="#FFF" mt="auto" bottom={0} bg="#24252c" zIndex={10}>
-            <Flex maxW="80rem" w="100%"  flexDirection="row" justifyContent="center">
-
-                <Flex w="25%" m="0 auto"  p="1rem 1rem"  flexDirection="column" >
-                    <Text fontSize="18px" fontWeight="bold" m="auto 0rem auto 0" cursor="pointer" textAlign="left" color="#FFF" transition="0.2s">ABOUT ZORACLES</Text>
-                    <Text fontSize="14px" fontWeight="regular" m="auto 3rem auto 0" cursor="pointer" color="#FFF" transition="0.2s">The world’s first NFT marketplace for Uniswap non-fungible tokens (NFTs). Buy, sell, and discover new financial NFTs. Unibond is  powered by Zoracles technology.</Text>
-                </Flex>
-                <Flex flexDirection="column"  p="1rem 1rem">
-                    <Text fontSize="18px" fontWeight="bold" cursor="pointer" color="#FFF" transition="0.2s">Quick Menu</Text>
+            <Flex maxW="80rem" w="100%"  flexDirection={["column", "column", "column", "row"]} p="30px 10px 40px 10px" m="0 auto" justifyContent="space-between">
+                <Box maxW="400px" pr="30px">
+                    <Text fontSize="18px" fontWeight="bold">ABOUT ZORACLES</Text>
+                    <Text fontSize="14px" fontWeight="regular" mt="20px">The world’s first NFT marketplace for Uniswap non-fungible tokens (NFTs). Buy, sell, and discover new financial NFTs. Unibond is  powered by Zoracles technology.</Text>
+                </Box>
+                <Box m={["30px 0", "30px 0", "30px 0", "0"]}>
+                    <Text fontSize="18px" fontWeight="bold" mb="20px">Quick Menu</Text>
                     <Link href="/explore">
-                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Uniswap</Text>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">Uniswap</Text>
                     </Link>
                     <Link href="/mypositions">
-                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">NFTs</Text>
+                        <Text fontSize="14px" fontWeight="500" mt="10px" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">NFTs</Text>
                     </Link>
                     <Link href="/salelist">
-                        <Text fontSize="14px" fontWeight="500" m="auto 2rem auto 0" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Bonds</Text>
+                        <Text fontSize="14px" fontWeight="500" mt="10px" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">Bonds</Text>
                     </Link>
-                </Flex>
-                <Flex flexDirection="column" ml="5%" p="1rem 1rem">
-                    <Text fontSize="18px" fontWeight="bold" cursor="pointer" color="#FFF" transition="0.2s">More Links</Text>
-                    <Link href="https://discord.com/invite/DSYQYAqEUX" target="_blank">
-                        <Text fontSize="14px" fontWeight="500" m="auto 0rem auto 0" textAlign="right" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Discord</Text>
-                    </Link>
-                    <Link href="https://t.me/zoracles" target="_blank">
-                        <Text fontSize="14px" fontWeight="500" m="auto 0rem auto 0" textAlign="right" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Telegram</Text>
-                    </Link>
-                    <Link href="https://zoracles.medium.com/" target="_blank">
-                        <Text fontSize="14px" fontWeight="500" m="auto 0rem auto 0" textAlign="right" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Medium</Text>
-                    </Link>
-                    <Link href="https://twitter.com/z0racles" target="_blank">
-                        <Text fontSize="14px" fontWeight="500" m="auto 0rem auto 0" textAlign="right" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Twitter</Text>
-                    </Link>
-                    <Link href="https://www.reddit.com/r/Zoracles/" target="_blank">
-                        <Text fontSize="14px" fontWeight="500" m="auto 0rem auto 0" textAlign="right" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">Reddit</Text>
-                    </Link>
-                    <Link href="https://www.youtube.com/channel/UCFx9FbUYK38_HhSm9DL38fQ" target="_blank">
-                        <Text fontSize="14px" fontWeight="500" m="auto 0rem auto 0" textAlign="right" cursor="pointer" _hover={{color:"#0E0F11"}} color="#FFF" transition="0.2s">YouTube</Text>
-                    </Link>
-                </Flex>                
+                </Box>
+                <Box>
+                    <Text fontSize="18px" fontWeight="bold" mb="20px">More Links</Text>
+                    <ChakraLink href="https://discord.com/invite/DSYQYAqEUX" isExternal _hover={{}}>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">Discord</Text>
+                    </ChakraLink>
+                    <ChakraLink href="https://t.me/zoracles" isExternal _hover={{}}>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s" mt="10px">Telegram</Text>
+                    </ChakraLink>
+                    <ChakraLink href="https://zoracles.medium.com/" isExternal _hover={{}}>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s" mt="10px">Medium</Text>
+                    </ChakraLink>
+                    <ChakraLink href="https://twitter.com/z0racles" isExternal _hover={{}}>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s" mt="10px">Twitter</Text>
+                    </ChakraLink>
+                    <ChakraLink href="https://www.reddit.com/r/Zoracles/" isExternal _hover={{}}>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s" mt="10px">Reddit</Text>
+                    </ChakraLink>
+                    <ChakraLink href="https://www.youtube.com/channel/UCFx9FbUYK38_HhSm9DL38fQ" isExternal _hover={{}}>
+                        <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s" mt="10px">YouTube</Text>
+                    </ChakraLink>
+                </Box>
+                
+                <Box/>
             </Flex>
         </Box>
     )
