@@ -112,7 +112,7 @@ const TokenPage = () => {
         try {
             // The call to the subgraph
             let positionRes = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-                query: POSITION_QUERY.replace('%1', id),
+                query: POSITION_QUERY(id),
             });
             // Setting up some variables to keep things shorter & clearer
             let position = positionRes.data.data.position;

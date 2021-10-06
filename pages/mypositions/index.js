@@ -1,4 +1,25 @@
-import { Box, Flex, Image, Link, SimpleGrid, SkeletonText, Text } from "@chakra-ui/core";
+import {
+    Box,
+    Flex,
+    Image,
+    Link,
+    SimpleGrid,
+    SkeletonText,
+    Text,
+    Modal,
+    ModalOverlay,
+    ModalContent,
+    ModalHeader,
+    ModalBody,
+    ModalCloseButton,
+    Collapse,
+    useToast,
+    Spinner,
+    NumberInput,
+    NumberInputField,
+    useDisclosure,
+} from "@chakra-ui/core";
+import Big from "big.js";
 import { ArrowDownIcon, ArrowUpIcon, ExternalLinkIcon } from "@chakra-ui/icons";
 import axios                    from "axios";
 import { ethers }               from "ethers";
@@ -6,7 +27,7 @@ import { useRouter } from "next/router";
 import { useEffect, useMemo, useRef, useState }  from "react";
 import { useWallet } from "use-wallet";
 
-import { getBalanceOf, getTokenURI } from "../../contracts/erc721";
+import { getBalanceOf } from "../../contracts/erc721";
 import { getWalletAddress, isWalletConnected } from "../../lib/wallet";
 
 const base64  = require("base-64");
@@ -34,25 +55,49 @@ import {
     get2DayChange,
     useDeltaTimestamps,
     formatDollarAmount,
+    getPositionData,
 } from "../../lib/helper";
+import {
+    isApprovedForAll,
+    setApprovalForAll,
+    getTokenURI,
+} from "../../contracts/erc721";
 
 const MyPositionPage = () => {
     const router = useRouter();
     const wallet = useWallet();
+    const toast = useToast();
     const [v3Balance, setv3Balance] = useState("-");
     const [initiated, setInitiated] = useState(false);
     const [myItems, setMyItems] = useState([]);
     const [ethUSD, setETHUSD] = useState(0);
     const [zoraScore, setZoraScore] = useState("-");
     const [loading, setLoading] = useState(true);
-    const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/uniswap/uniswap-v3';
+    const [sellItem, setSellItem] = useState(null);
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const { isOpen, onToggle } = useDisclosure();
+    const [isUniv3approved, setIsUniv3Approved] = useState(false);
+    const [approving, setApproving] = useState(false);
+    const [listing, setListing] = useState(false);
+    const [curAsset, setCurAsset] = useState(0);
+    const [assetAmount, setAssetAmount] = useState(0);
+    const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
     
     useEffect(async () => {
-        let priceRes = await axios.post(graphqlEndpoint, {
-          query: ETHPRICE_QUERY,
-        });
-        setETHUSD(parseFloat(priceRes.data.data.bundle.ethPriceUSD));
     }, []);
+
+    const onAssetAmountChange = (value) => {
+        setAssetAmount(value);
+    }
+
+    const onPutonSale = (item) => {
+        setSellItem(item);
+        setIsModalOpen(true);
+    }
+
+    const onModalClose = () => {
+        setIsModalOpen(false);
+    }
 
     const getChange2DayData = async (poolAddress) => {
         let poolRes = await axios.post(UNIV3_GRAPH_ENDPOINT, {
@@ -98,150 +143,8 @@ const MyPositionPage = () => {
         }
     };
 
-    const sqrtPriceToPriceAdjusted = (sqrtPriceX96Prop, decimalDifference) => {
-        let sqrtPrice = parseFloat(sqrtPriceX96Prop) / x96;
-        let divideBy = Math.pow(10, decimalDifference);
-        let price = Math.pow(sqrtPrice, 2) / divideBy;
-        return price;
-    }
 
-    const sqrtPriceToPrice = (sqrtPriceX96Prop) => {
-        let sqrtPrice = parseFloat(sqrtPriceX96Prop) / x96;
-        let price = Math.pow(sqrtPrice, 2);
-        return price;
-    }
-
-    const getPositionbySubGraph = async (tokenId) => {
-        try {
-            // The call to the subgraph
-            let positionRes = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-                query: POSITION_QUERY.replace('%1', tokenId),
-            });
-            // Setting up some variables to keep things shorter & clearer
-            let position = positionRes.data.data.position;
-            let positionLiquidity = position.liquidity;
-            let pool = position.pool;
-            let decimalDifference =
-            parseInt(position.token1.decimals, 10) -
-            parseInt(position.token0.decimals, 10);
-            // let [symbol_0, symbol_1] = [position.token0.symbol, position.token1.symbol];
-        
-            // Prices (not decimal adjusted)
-            let priceCurrent = sqrtPriceToPrice(pool.sqrtPrice);
-            let priceUpper = parseFloat(position.tickUpper.price0);
-            let priceLower = parseFloat(position.tickLower.price0);
-        
-            // Square roots of the prices (not decimal adjusted)
-            let priceCurrentSqrt = parseFloat(pool.sqrtPrice) / Math.pow(2, 96);
-            let priceUpperSqrt = Math.sqrt(parseFloat(position.tickUpper.price0));
-            let priceLowerSqrt = Math.sqrt(parseFloat(position.tickLower.price0));
-        
-            // Prices (decimal adjusted)
-            let priceCurrentAdjusted = sqrtPriceToPriceAdjusted(pool.sqrtPrice, decimalDifference);
-            // let priceUpperAdjusted = parseFloat(position.tickUpper.price0) / Math.pow(10, decimalDifference);
-            // let priceLowerAdjusted = parseFloat(position.tickLower.price0) / Math.pow(10, decimalDifference);
-        
-            // Prices (decimal adjusted and reversed)
-            let priceCurrentAdjustedReversed = 1 / priceCurrentAdjusted;
-            // let priceLowerAdjustedReversed = 1 / priceUpperAdjusted;
-            // let priceUpperAdjustedReversed = 1 / priceLowerAdjusted;
-        
-            // The amount calculations using positionLiquidity & current, upper and lower priceSqrt
-            let amount_0, amount_1;
-            if (priceCurrent <= priceLower) {
-                amount_0 = positionLiquidity * (1 / priceLowerSqrt - 1 / priceUpperSqrt);
-                amount_1 = 0;
-            } else if (priceCurrent < priceUpper) {
-                amount_0 = positionLiquidity * (1 / priceCurrentSqrt - 1 / priceUpperSqrt);
-                amount_1 = positionLiquidity * (priceCurrentSqrt - priceLowerSqrt);
-            } else {
-                amount_1 = positionLiquidity * (priceUpperSqrt - priceLowerSqrt);
-                amount_0 = 0;
-            }
-        
-            // Decimal adjustment for the amounts
-            let amount_0_Adjusted = amount_0 / Math.pow(10, position.token0.decimals);
-            let amount_1_Adjusted = amount_1 / Math.pow(10, position.token1.decimals);
-        
-            // UNCOLLECTED FEES --------------------------------------------------------------------------------------
-            // Check out the relevant formulas below which are from Uniswap Whitepaper Section 6.3 and 6.4
-        
-            // These will be used for both tokens' fee amounts
-            let tickCurrent = parseFloat(position.pool.tick);
-            let tickLower = parseFloat(position.tickLower.tickIdx);
-            let tickUpper = parseFloat(position.tickUpper.tickIdx);
-        
-            // Global fee growth per liquidity '��' for both token 0 and token 1
-            let feeGrowthGlobal_0 = parseFloat(position.pool.feeGrowthGlobal0X128) / x128;
-            let feeGrowthGlobal_1 = parseFloat(position.pool.feeGrowthGlobal1X128) / x128;
-        
-            // Fee growth outside '��' of our lower tick for both token 0 and token 1
-            let tickLowerFeeGrowthOutside_0 = parseFloat(position.tickLower.feeGrowthOutside0X128) / x128;
-            let tickLowerFeeGrowthOutside_1 = parseFloat(position.tickLower.feeGrowthOutside1X128) / x128;
-        
-            // Fee growth outside '��' of our upper tick for both token 0 and token 1
-            let tickUpperFeeGrowthOutside_0 = parseFloat(position.tickUpper.feeGrowthOutside0X128) / x128;
-            let tickUpperFeeGrowthOutside_1 = parseFloat(position.tickUpper.feeGrowthOutside1X128) / x128;
-
-            // for both token 0 and token 1
-            let tickLowerFeeGrowthBelow_0;
-            let tickLowerFeeGrowthBelow_1;
-            let tickUpperFeeGrowthAbove_0;
-            let tickUpperFeeGrowthAbove_1;
-
-            // for both token 0 and token 1
-            if (tickCurrent >= tickUpper) {
-                tickUpperFeeGrowthAbove_0 = feeGrowthGlobal_0 - tickUpperFeeGrowthOutside_0;
-                tickUpperFeeGrowthAbove_1 = feeGrowthGlobal_1 - tickUpperFeeGrowthOutside_1;
-            } else {
-                tickUpperFeeGrowthAbove_0 = tickUpperFeeGrowthOutside_0;
-                tickUpperFeeGrowthAbove_1 = tickUpperFeeGrowthOutside_1;
-            }
-
-            // for both token 0 and token 1
-            if (tickCurrent >= tickLower) {
-                tickLowerFeeGrowthBelow_0 = tickLowerFeeGrowthOutside_0;
-                tickLowerFeeGrowthBelow_1 = tickLowerFeeGrowthOutside_1;
-            } else {
-                tickLowerFeeGrowthBelow_0 = feeGrowthGlobal_0 - tickLowerFeeGrowthOutside_0;
-                tickLowerFeeGrowthBelow_1 = feeGrowthGlobal_1 - tickLowerFeeGrowthOutside_1;
-            }
-
-            // for both token 0 and token 1
-            let fr_t1_0 = feeGrowthGlobal_0 - tickLowerFeeGrowthBelow_0 - tickUpperFeeGrowthAbove_0;
-            let fr_t1_1 = feeGrowthGlobal_1 - tickLowerFeeGrowthBelow_1 - tickUpperFeeGrowthAbove_1;
-        
-            // for both token 0 and token 1
-            let feeGrowthInsideLast_0 = parseFloat(position.feeGrowthInside0LastX128) / x128;
-            let feeGrowthInsideLast_1 = parseFloat(position.feeGrowthInside1LastX128) / x128;
-
-            // for both token 0 and token 1 since we now know everything that is needed to compute it
-            let uncollectedFees_0 = positionLiquidity * (fr_t1_0 - feeGrowthInsideLast_0);
-            let uncollectedFees_1 = positionLiquidity * (fr_t1_1 - feeGrowthInsideLast_1);
-        
-            // Decimal adjustment to get final results
-            let uncollectedFeesAdjusted_0 = uncollectedFees_0 / Math.pow(10, position.token0.decimals);
-            let uncollectedFeesAdjusted_1 = uncollectedFees_1 / Math.pow(10, position.token1.decimals);
-            // UNCOLLECTED FEES END ----------------------------------------------------------------------------------
-            const twodayChgInfo = await getChange2DayData(position.pool.id);
-            return {
-                token0: position.token0.id,
-                token1: position.token1.id,
-                liquidity: positionLiquidity,
-                amount0: amount_0_Adjusted,
-                amount1: amount_1_Adjusted,
-                curPrice: priceCurrentAdjustedReversed,
-                fee0: uncollectedFeesAdjusted_0,
-                fee1: uncollectedFeesAdjusted_1,
-                twodayChgInfo,
-                poolAddress: position.pool.id
-            };
-        } catch (e) {
-            console.log("Error", e)
-        }
-    }
-
-    const getLiquidityValue = (position) => {
+    const getLiquidityValue = (position, ethUSDPrice) => {
         const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
         if (!liquidity || !parseInt(liquidity)) return "-";
         let usdLiq = 0;
@@ -250,9 +153,9 @@ const MyPositionPage = () => {
         } else if (isStableCoin(token0)) {
             usdLiq = amount1 * curPrice + amount0;
         } else if (isWETH(token1)) {
-            usdLiq = amount0 / curPrice * ethUSD + amount1 * ethUSD;
+            usdLiq = amount0 / curPrice * ethUSDPrice + amount1 * ethUSDPrice;
         } else if (isWETH(token0)) {
-            usdLiq = amount1 * curPrice * ethUSD + amount0 * ethUSD;
+            usdLiq = amount1 * curPrice * ethUSDPrice + amount0 * ethUSDPrice;
         } else {
             return "-";
         }
@@ -284,8 +187,16 @@ const MyPositionPage = () => {
     useEffect(async () => {
         if (!initiated && isWalletConnected(wallet)) {
             setInitiated(true);
+            let priceRes = await axios.post(graphqlEndpoint, {
+              query: ETHPRICE_QUERY,
+            });
+            const ethUSDPrice = parseFloat(priceRes.data.data.bundle.ethPriceUSD);
+            setETHUSD(ethUSDPrice);
+            const address = getWalletAddress(wallet);
+            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+            const approved = await isApprovedForAll(UNI_V3_NFT_POSITIONS_ADDRESS, address, UNIBOND_ADDRESS, provider);
+            setIsUniv3Approved(approved);
             try {
-                const address = getWalletAddress(wallet);
                 const res = await axios.get(ZORA_SCORE_API + address);
                 if (res && res.data) {
                     const rating = parseFloat(res.data.result.rating);
@@ -294,9 +205,7 @@ const MyPositionPage = () => {
             } catch (e) {
             }
             try {
-                const provider = new ethers.providers.Web3Provider(wallet.ethereum);
                 const signer = await provider.getSigner();
-                const address = getWalletAddress(wallet);
                 const bal = await getBalanceOf(UNI_V3_NFT_POSITIONS_ADDRESS, address, signer);
                 setv3Balance(bal);
 
@@ -317,8 +226,10 @@ const MyPositionPage = () => {
                     const bytes = base64.decode(parts[1]);
                     let jsonData = JSON.parse(bytes);
                     jsonData.tokenId = assets[i].tokenId;
-                    const pos = await getPositionbySubGraph(assets[i].tokenId);
-                    jsonData.assetValue = getLiquidityValue(pos);
+                    let pos = await getPositionData(assets[i].tokenId, []);
+                    const twodayChgInfo = await getChange2DayData(pos.poolAddr);
+                    pos.twodayChgInfo = twodayChgInfo;
+                    jsonData.assetValue = getLiquidityValue(pos, ethUSDPrice);
                     jsonData.feeValue = getFeeValue(pos);
                     jsonData.chgData = pos.twodayChgInfo;
                     jsonData.poolAddress = pos.poolAddress;
@@ -344,7 +255,7 @@ const MyPositionPage = () => {
     const renderDetailItem = (oName, value) => {
         return (
             <Flex flexDirection="row" m="3px 0">
-                <Text minW="140px" color="rgb(195, 197, 203)">{oName}</Text>
+                <Text minW="140px" color="#555">{oName}</Text>
                 <Box w="10px" h="10px" borderRadius="100%" bg="none" m="auto 10px"/>
                 <Text fontWeight="bold">{value}</Text>
             </Flex>
@@ -354,7 +265,7 @@ const MyPositionPage = () => {
     const renderDetailItem24 = (oName, value, percent) => {
         return (
             <Flex flexDirection="row" m="3px 0">
-                <Text minW="140px" color="rgb(195, 197, 203)">{oName}</Text>
+                <Text minW="140px" color="#555">{oName}</Text>
                 <Box w="10px" h="10px" borderRadius="100%" bg="none" m="auto 10px"/>
                 <Flex flexDirection="row">
                     <Text fontWeight="bold" mr="3px">{value}</Text>
@@ -372,10 +283,228 @@ const MyPositionPage = () => {
         return parseInt(zoraScore) + "%";
     }, [zoraScore]);
 
+    const onApprove = async () => {
+        try {
+            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+            const signer = await provider.getSigner();
+            setApproving(true);
+            const hash = await setApprovalForAll(UNI_V3_NFT_POSITIONS_ADDRESS, UNIBOND_ADDRESS, signer);
+            if (hash) {
+                setIsUniv3Approved(true);
+                toast({
+                    title: "Success",
+                    description: "Transaction is confirmed.",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Transaction is reverted.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+            }
+        } catch (e) {
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });            
+        } finally {
+            setApproving(false);
+        }
+    }
+
+    const onList = async () => {
+        try {
+            const amount = convertToBigNumer(assetAmount + "", SUPPORT_ASSETS[curAsset].decimals);
+            if (!amount || !parseFloat(amount)) {
+                toast({
+                    title: "Error",
+                    description: "Amount can not be zero",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+                return;
+            }
+            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+            const signer = await provider.getSigner();
+            setListing(true);
+            const hash = await createSwap(
+                UNIBOND_ADDRESS,
+                sellItem.tokenId,
+                SUPPORT_ASSETS[curAsset].address,
+                amount,
+                curAsset ? 0 : 1,
+                signer
+            );
+            if (hash) {
+                toast({
+                    title: "Success",
+                    description: "Transaction is confirmed.",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+                setIsModalOpen(false);
+                setOnSaleAssets([...onsaleAssets, sellItem]);
+                let i;
+                const _newItems = [];
+                for (i = 0; i < myItems.length; i ++)
+                    if (myItems[i].tokenId !== sellItem.tokenId) _newItems.push(myItems[i]);
+                setMyItems([..._newItems]);
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Transaction is reverted.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+            }
+        } catch (e) {
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });       
+        } finally {
+            setListing(false);
+        }
+
+    }
+
+    const renderApproveButton = () => {
+        if (approving) {
+            return (
+                <Flex bg="#000" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none">
+                    <Text fontWeight="bold" fontSize="14px" mr="0.5rem">Approve</Text>
+                    <Spinner size="sm"/>
+                </Flex>
+            );
+        }
+        if (!isUniv3approved)
+            return (
+                <Flex bg="#000" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s" onClick={onApprove}>
+                    <Text fontWeight="bold" fontSize="14px">Approve</Text>
+                </Flex>
+            );
+        return (
+            <Flex bg="#aaa" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="not-allowed" userSelect="none">
+                <Text fontWeight="bold" fontSize="14px">Approve</Text>
+            </Flex>
+        );
+    }
+
+    const getUSDPrice = () => {
+        if (curAsset > 1) return assetAmount;
+        else return assetAmount * ethUSD;
+    }
+
+    const renderModal = () => {
+        if (!sellItem) return (null);
+        return (
+            <Modal isOpen={isModalOpen} onClose={onModalClose}>
+                <ModalOverlay />
+                <ModalContent bg="#fff" color="#000">
+                    <ModalHeader fontSize="18px">Put on Sale</ModalHeader>
+                    <ModalCloseButton />
+                    <ModalBody>
+                        <Box w="100%" h="1px" bg="#EDF0F3" mb="1rem"/>
+                        <Flex flexDirection="row">
+                            <Box minW={150}>
+                                <Image src={sellItem.image} width={150} height={200} alt="" /> 
+                            </Box>
+                            <Box ml="1rem" mt="1rem" color="#555">
+                                <Text fontSize="14px" fontWeight="bold">Token id: {sellItem.tokenId}</Text>
+                                <Text fontSize="14px" fontWeight="bold" mt="1rem">{sellItem.name}</Text>
+                            </Box>
+                        </Flex>
+                        <Box w="100%" h="1px" bg="#EDF0F3" m="1rem 0"/>
+                        <Text fontWeight="bold" color="#555" fontSize="14px">Price for this item</Text>
+                        <Flex flexDirection="row" justifyContent="space-between" mt="0.5rem">
+                            <Flex flexDirection="row" m="auto 0" w="90px" border="1px solid #EDF0F3" borderRadius="5px" p="7px 2px">
+                                <Flex flexDirection="row" cursor="pointer" onClick={onToggle} userSelect="none">
+                                    <Image src={SUPPORT_ASSETS[curAsset].img} w="24px" m="auto 0"/>
+                                    <Text fontSize="14px" m="auto 0.5rem">{SUPPORT_ASSETS[curAsset].name}</Text>
+                                </Flex>
+                            </Flex>
+                            <Flex m="auto 0">
+                                <NumberInput min={0} defaultValue={1} value={assetAmount} onChange={onAssetAmountChange}  outline="none">
+                                    <NumberInputField  outline="none" _focus={{}} bg="#EDF0F3"/>
+                                </NumberInput>
+                            </Flex>
+                            <Flex w="100px" border="1px solid #EDF0F3" borderRadius="5px">
+                                <Text m="auto 0" p="0 0.5rem" textOverflow="ellipsis" overflow="hidden" whiteSpace="nowrap" fontSize="12px">$ {getUSDPrice()}</Text>
+                            </Flex>
+                        </Flex>
+                        <Box mt="0.5rem" bg="#EDF0F3" p="0 0.5rem" borderRadius="10px" w="150px">
+                            <Collapse in={isOpen} animateOpacity>
+                                {SUPPORT_ASSETS.map((item, index) => {
+                                    return (
+                                        <Flex flexDirection="row" key={index} userSelect="none" cursor="pointer" m="0.5rem 0"
+                                            onClick={() => {setCurAsset(index); onToggle();}}
+                                        >
+                                            <Image src={item.img} w="24px" m="auto 0"/>
+                                            <Text fontSize="14px" m="auto 0.5rem">{item.name}</Text>
+                                        </Flex>
+                                    )
+                                })}
+                            </Collapse>
+                        </Box>
+                        <Box w="100%" h="1px" bg="#555" m="1rem 0"/>
+                        <Flex flexDirection="row" justifyContent="center" mb="1rem">
+                            {renderApproveButton()}
+                            {renderListingButton()}
+                        </Flex>
+                    </ModalBody>
+                </ModalContent>
+            </Modal>
+        );
+    }
+
+    const renderListingButton = () => {
+        if (listing) {
+            return (
+                <Flex bg="#000" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem">
+                    <Text fontWeight="bold" fontSize="14px" mr="0.5rem">Complete listing</Text>
+                    <Spinner size="sm"/>
+                </Flex>
+            );
+        }
+        if (isUniv3approved)
+            return (
+                <Flex bg="#000" color="#fff"  p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s" ml="1rem" onClick={onList}>
+                    <Text fontWeight="bold" fontSize="14px">Complete listing</Text>
+                </Flex>
+            );
+        return (
+            <Flex bg="#aaa" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="not-allowed" userSelect="none" ml="1rem">
+                <Text fontWeight="bold" fontSize="14px">Complete listing</Text>
+            </Flex>
+        );
+    }
+
     return (
         <Box w="100%" mt="6rem" minHeight="71vh" color="#000">
-            <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
-                <Flex flexDirection="row" justifyContent="space-between" mb="30px">
+            {renderModal()}
+            <Flex maxW="80rem" w="100%" m="2rem auto" p="0 1rem" flexDirection="column">
+                <Flex flexDirection="row" justifyContent="space-between" mb="30px" bg="#EDF0F3" p="20px" borderRadius="10px">
                     <Flex flexDirection="row">
                         <Image src="/images/tokenpage/avatar.png" alt="/" w={14}/>
                         <Flex flexDirection="column" m="auto 1rem">
@@ -397,23 +526,32 @@ const MyPositionPage = () => {
                 }
                 <SimpleGrid spacing="2rem" minChildWidth="35rem" w="100%">
                     {myItems.map((item, index) => {
-                        console.log(item)
                         return (
-                            <Flex key={index} borderRadius="20px" p="20px 30px" flexDirection="row" bg="#41444F">
+                            <Flex key={index} borderRadius="20px" p="20px 30px" flexDirection="row" bg="#EDF0F3">
                                 <Image src={item.image} alt="/" maxW="140px" mr="30px"/>
                                 <Flex flexDirection="column" mt="15px">
                                     {renderDetailItem("Asset Value:", "$ " + item.assetValue)}
                                     {renderDetailItem("Unclaimed Fees:", "$ " + item.feeValue)}
-                                    {renderDetailItem("LP Risk Profile:","-")}
+                                    {/* {renderDetailItem("LP Risk Profile:","-")} */}
                                     {renderDetailItem24("Volume 24h:", formatDollarAmount(item.chgData.volumeUSD), item.chgData.volumeUSDChange)}
                                     {renderDetailItem24("TVL:", formatDollarAmount(item.chgData.tvlUSD), item.chgData.tvlUSDChange)}
-                                    <Flex bg="#2D81FF" m="15px auto 0 0" p="3px 30px" borderRadius="10px"
-                                        cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s"
-                                        onClick={() => {
-                                            router.push("/pools/" + item.tokenId)
-                                        }}
-                                    >
-                                        <Text>View</Text>
+                                    <Flex flexDirection="row">
+                                        <Flex bg="#000" m="15px auto 0 0" p="5px 30px" borderRadius="10px" color="#fff"
+                                            cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s"
+                                            onClick={() => {
+                                                router.push("/pools/" + item.tokenId)
+                                            }}
+                                        >
+                                            <Text>View</Text>
+                                        </Flex>
+                                        <Flex bg="#000" m="15px auto 0 0" p="5px 30px" borderRadius="10px" color="#fff"
+                                            cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s"
+                                            onClick={() => {
+                                                onPutonSale(item);
+                                            }}
+                                        >
+                                            <Text>Put on Sale</Text>
+                                        </Flex>
                                     </Flex>
                                 </Flex>
                                 <Flex ml="auto">
@@ -426,6 +564,11 @@ const MyPositionPage = () => {
                     })}
                     <Box/>
                 </SimpleGrid>
+                {(!loading && !myItems.length) &&
+                    <Box w="100%">
+                        <Text textAlign="center" color="#555" fontWeight="bold">You don't have any Uniswap V3 NFTs in your wallet.</Text>
+                    </Box>
+                }
             </Flex>
         </Box>
     );
