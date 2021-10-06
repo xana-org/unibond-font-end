@@ -41,8 +41,7 @@ const Footer = () => {
                     <ChakraLink href="https://www.youtube.com/channel/UCFx9FbUYK38_HhSm9DL38fQ" isExternal _hover={{}}>
                         <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s" mt="10px">YouTube</Text>
                     </ChakraLink>
-                </Box>
-                
+                </Box>                
                 <Box/>
             </Flex>
         </Box>

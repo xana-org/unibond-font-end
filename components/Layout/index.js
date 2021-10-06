@@ -1,4 +1,4 @@
-import { Box }                  from "@chakra-ui/core";
+import { Box, Flex }                  from "@chakra-ui/core";
 import { useRouter }            from "next/router";
 import { useEffect, useState }            from "react";
 import { useWallet }            from "use-wallet";
@@ -50,10 +50,10 @@ const Layout = ({ children }) => {
     return (
         <Box w="100%" bg="#000%" color="#fff">
             <Header/>
-            <Box overflowY="auto" w="100%" >
+            <Flex overflowY="auto" w="100%" minHeight="100vh" flexDirection="column">
               {children}
               <Footer />
-            </Box>
+            </Flex>
             {/* {!isHide&&()} */}
         </Box>
     );
