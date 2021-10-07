@@ -21,6 +21,7 @@ import {
   useToast,
   Select,
 } from "@chakra-ui/core";
+import { ArrowDownIcon, ArrowUpIcon, ExternalLinkIcon } from "@chakra-ui/icons";
 import {
   getTokenURI
 } from "../../contracts/erc721";
@@ -45,6 +46,13 @@ import {
   getAllowance,
   approveAsset
 } from "../../contracts/erc20";
+import {
+  getLiquidityValue,
+  getFeeValue,
+  getPositionData,
+  getChange2DayData,
+  formatDollarAmount,
+} from "../../lib/helper";
 const base64  = require("base-64");
 import BigNumber from "bignumber.js";
 
@@ -61,9 +69,9 @@ const SaleList = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [buyItem, setBuyItem] = useState(null);
   const [nodata, setNodata] = useState(false);
+  const [curTab, setCurTab] = useState("1");
 
   const [confirming, setConfirming] = useState(false);
-  const [fOption, setfOption] = useState("1");
 
   const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
 
@@ -72,10 +80,10 @@ const SaleList = () => {
       query: ETHPRICE_QUERY,
     });
     setETHUSD(parseFloat(priceRes.data.data.bundle.ethPriceUSD));
-    loadData(0, "1");
+    loadData(0, "1", parseFloat(priceRes.data.data.bundle.ethPriceUSD));
   }, []);
 
-  const loadData = async (offset, fstatus) => {
+  const loadData = async (offset, fstatus, ethUSDPrice) => {
     setLoading(true);
     try {
       const _salelist = await axios.post(UNIBOND_GRAPH_ENDPOINT, {
@@ -101,6 +109,14 @@ const SaleList = () => {
             jsonData.buyer = assets[i].buyer;
             jsonData.amount = assets[i].amount;
             jsonData.payToken = assets[i].payToken;
+
+            let pos = await getPositionData(assets[i].tokenId, []);
+            const twodayChgInfo = await getChange2DayData(pos.poolAddr);
+            pos.twodayChgInfo = twodayChgInfo;
+            jsonData.assetValue = getLiquidityValue(pos, ethUSDPrice);
+            jsonData.feeValue = getFeeValue(pos, ethUSDPrice);
+            jsonData.chgData = pos.twodayChgInfo;
+            jsonData.poolAddress = pos.poolAddr;
             _swapList.push(jsonData);
         }
         if (_swapList.length < 8) setNodata(true);
@@ -112,7 +128,7 @@ const SaleList = () => {
         setOffset(offset + _swapList.length);
       }
     } catch (e) {
-
+      console.log(e);
     } finally {
       setLoading(false);
     }
@@ -167,7 +183,7 @@ const SaleList = () => {
     return (
       <Box p="10px 0rem">
         <Flex flexDirection="row" justifyContent="space-between">
-          <Text fontSize="12px" color="#000" m="auto 10px auto 0">on sale for</Text>
+          <Text fontSize="14px" color="#555" m="auto 10px auto 0">on sale for</Text>
           <Flex flexDirection="row">
             <Image src={sAsset.img} h="20px"/>
             <Text fontSize="14px" m="auto 5px auto 5px" fontWeight="bold">{amount.toFixed(4)}</Text>
@@ -201,8 +217,11 @@ const SaleList = () => {
     if (item.status === "1") {
       return (
         <Flex flexDirection="row">
-            <Flex bg="#2D81FF" p="0.5rem 1.5rem" borderRadius="10px" cursor="pointer" m="0 auto" onClick={() => onNFTSelect(item)}>
-                <Text fontSize="12px">Buy</Text>
+            <Flex bg="#000" color="#fff" p="0.5rem 2rem" borderRadius="10px" cursor="pointer" onClick={() => onNFTSelect(item)} _hover={{opacity: 0.9}}>
+                <Text fontSize="14px">View</Text>
+            </Flex>
+            <Flex bg="#000" color="#fff" p="0.5rem 2rem" borderRadius="10px" cursor="pointer" onClick={() => onBuy(item)} ml="1rem" _hover={{opacity: 0.9}}>
+                <Text fontSize="14px">Buy</Text>
             </Flex>
         </Flex>
       )
@@ -262,7 +281,7 @@ const SaleList = () => {
         return (
             <Flex bg="#2D81FF80" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none">
                 <Text fontWeight="bold" fontSize="14px" mr="0.5rem">Approve</Text>
-                <Spinner size="sm"/>
+                <Spinner size="sm" m="auto 0"/>
             </Flex>
         );
       }
@@ -311,6 +330,7 @@ const SaleList = () => {
         });
       }
     } catch(e) {
+      console.log(e)
       toast({
           title: "Error",
           description: "Transaction is reverted.",
@@ -328,20 +348,20 @@ const SaleList = () => {
     if (approved || (buyItem && buyItem.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead")) {
       if (confirming) {
         return (
-            <Flex bg="#2D81FF80" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem">
+            <Flex bg="#000" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem">
                 <Text fontWeight="bold" fontSize="14px" mr="0.5rem">BUY NOW</Text>
                 <Spinner size="sm"/>
             </Flex>
         );
       }
       return (
-        <Flex bg="#2D81FF" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem" onClick={onBuyItem}>
+        <Flex bg="#000" color="#fff" p="0.5rem 1rem" borderRadius="10px" cursor="pointer" userSelect="none" ml="1rem" onClick={onBuyItem}>
             <Text fontWeight="bold" fontSize="14px" mr="0.5rem">BUY NOW</Text>
         </Flex>
       );
     }
     return (
-      <Flex bg="#aaa" p="0.5rem 1rem" borderRadius="10px" userSelect="none" ml="1rem">
+      <Flex bg="#aaa" color="#fff" p="0.5rem 1rem" borderRadius="10px" userSelect="none" ml="1rem">
           <Text fontWeight="bold" fontSize="14px" mr="0.5rem">BUY NOW</Text>
       </Flex>
     );
@@ -351,10 +371,10 @@ const SaleList = () => {
     if (!buyItem) return (null);
     console.log(buyItem);
     return (
-      <Modal isOpen={isModalOpen} onClose={onModalClose}>
+      <Modal isOpen={isModalOpen} onClose={onModalClose} size="lg">
           <ModalOverlay />
-          <ModalContent>
-              <ModalHeader>Item Info</ModalHeader>
+          <ModalContent bg="#fff" color="#000">
+              <ModalHeader fontSize="18px">Buy Now</ModalHeader>
               <ModalCloseButton />
               <ModalBody>
                   <Box w="100%" h="1px" bg="#555" mb="1rem"/>
@@ -362,9 +382,9 @@ const SaleList = () => {
                       <Box minW={150}>
                           <Image src={buyItem.image} width={150} height={200} alt="" /> 
                       </Box>
-                      <Box ml="1rem" mt="1rem" color="#ccc">
-                        <Text fontSize="14px" fontWeight="bold">Token id: {buyItem.tokenId}</Text>
-                        <Text fontSize="14px" fontWeight="bold" mt="1rem">{buyItem.name}</Text>
+                      <Box ml="1rem" mt="1rem" w="100%">
+                        {renderDetailItem("Asset Value:", "$ " + buyItem.assetValue)}
+                        {renderDetailItem("Unclaimed Fees:", "$ " + buyItem.feeValue)}
                         {renderPrice(buyItem)}
                       </Box>
                   </Flex>
@@ -379,27 +399,61 @@ const SaleList = () => {
     )
   }
 
-  const onFilterChange = (e) => {
-    setfOption(e.target.value);
+  const onFilterChange = (curId) => {
+    setCurTab(curId);
     setSaleList([]);
     setOffset(0);
-    loadData(0, e.target.value);
+    loadData(0, curId, ethUSD);
   }
   const onNFTSelect = (item) => {
     router.push("/pools/" + item.tokenId)
   }
   const renderFilterOption = () => {
     return (
-      <Box mb="30px">
-        <Box w="30%" minW="300px">
-          <Select placeholder="Select option" onChange={onFilterChange}>
-            <option value="1">Open</option>
-            <option value="2">Sold items</option>
-            <option value="0">Closed</option>
-          </Select>
-        </Box>
-      </Box>
+        <Flex flexDirection="row" mb="30px">
+            <Flex bg={curTab !== "1"?"#aaa":"#000"} color="#fff" borderRadius="10px" p="8px 20px" fontSize="14px" fontWeight="bold"
+                cursor="pointer" _hover={{opacity: 0.9}} userSelect="none" onClick={() => {onFilterChange("1")}}
+            >
+                Open
+            </Flex>
+            <Flex bg={curTab !== "2"?"#aaa":"#000"} color="#fff" borderRadius="10px" p="8px 20px" fontSize="14px" fontWeight="bold" ml="10px"
+                cursor="pointer" _hover={{opacity: 0.9}} userSelect="none" onClick={() => {onFilterChange("2")}}
+            >
+                Sold
+            </Flex>
+            <Flex bg={curTab !== "0"?"#aaa":"#000"} color="#fff" borderRadius="10px" p="8px 20px" fontSize="14px" fontWeight="bold" ml="10px"
+                cursor="pointer" _hover={{opacity: 0.9}} userSelect="none" onClick={() => {onFilterChange("0")}}
+            >
+                Close
+            </Flex>
+        </Flex>
     )
+  }
+
+  const renderDetailItem = (oName, value) => {
+    return (
+        <Flex flexDirection="row" m="3px 0" fontSize="14px">
+            <Text minW="140px" color="#555">{oName}</Text>
+            <Box w="10px" h="10px" borderRadius="100%" bg="none" m="auto 10px"/>
+            <Text fontWeight="bold">{value}</Text>
+        </Flex>
+    );
+  };
+
+  const renderDetailItem24 = (oName, value, percent) => {
+      return (
+          <Flex flexDirection="row" m="3px 0" fontSize="14px">
+              <Text minW="140px" color="#555">{oName}</Text>
+              <Box w="10px" h="10px" borderRadius="100%" bg="none" m="auto 10px"/>
+              <Flex flexDirection="row">
+                  <Text fontWeight="bold" mr="3px">{value}</Text>
+                  {percent && parseFloat(percent) > 0 ? <ArrowUpIcon m="auto 0" color="rgb(39, 174, 96)"/> : <ArrowDownIcon m="auto 0" color="rgb(253, 64, 64)"/>}
+                  <Text color={percent && parseFloat(percent) > 0 ? "rgb(39, 174, 96)" : "rgb(253, 64, 64)"}>
+                      ({percent ? parseFloat(percent).toFixed(2): "0.00"}%)
+                  </Text>
+              </Flex>
+          </Flex>
+      );
   }
 
   return (
@@ -407,21 +461,29 @@ const SaleList = () => {
       {renderModal()}
       <Flex maxW="80rem" w="100%" m="3rem auto" p="0 1rem" flexDirection="column">
         {renderFilterOption()}
-        <SimpleGrid spacing="1rem" minChildWidth="15rem" w="100%">
+        <SimpleGrid spacing="1rem" minChildWidth="30rem" w="100%">
           {saleList.map((item, index) => {
               return (
-                  <Box key={index} border="1px solid #2e2e2e" p="10px 0" borderRadius="10px" userSelect="none" 
-                      _hover={{boxShadow: "0px 0px 8px 4px rgba(255, 255, 255, 0.1)"}} transition="0.3s"
-                  >
+                  <Box key={index} bg="#EDF0F3" p="10px 0" borderRadius="10px" userSelect="none">
                     {renderStatus(item)}
-                      <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item)}>
-                          <Image src={item.image} width={150} height={200} alt=""/>
+                    <Flex flexDirection="row" p="10px">
+                      <Flex flexDirection="row" justifyContent="center" cursor="pointer" onClick={() => onNFTSelect(item)} w="300px">
+                          <Image src={item.image} width={250} height={250} alt=""/>
                       </Flex>
-                      <Text fontSize="12px" p="1rem 0.5rem 0 0.5rem" color="#000" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden">{item.name}</Text>
-                      <Box p="0 10px" color="#000">
-                        {renderPrice(item)}
+                      <Box w="100%">
+                        <Text fontSize="14px" p="1rem 0.5rem 0 0.5rem" color="#000" whiteSpace="nowrap" textOverflow="ellipsis" overflow="hidden" fontWeight="bold">{item.name}</Text>
+                        <Box p="0 10px" color="#000">
+                          {renderDetailItem("Asset Value:", "$ " + item.assetValue)}
+                          {renderDetailItem("Unclaimed Fees:", "$ " + item.feeValue)}
+                          {/* {renderDetailItem("LP Risk Profile:","-")} */}
+                          {renderDetailItem24("Volume 24h:", formatDollarAmount(item.chgData.volumeUSD), item.chgData.volumeUSDChange)}
+                          {renderDetailItem24("TVL:", formatDollarAmount(item.chgData.tvlUSD), item.chgData.tvlUSDChange)}
+                          <Box w="100%" h="1px" bg="#aaa" m="10px 0"/>
+                          {renderPrice(item)}
+                        </Box>
+                        {renderAction(item)}
                       </Box>
-                      {renderAction(item)}
+                    </Flex>
                   </Box>
               )
           })}
@@ -434,10 +496,15 @@ const SaleList = () => {
                 <SkeletonText mt="4" noOfLines={4} spacing="4" />
             </Box>:
             (nodata?(null):
-              <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={() => loadData(offset, fOption)}>
+              <Flex bg="#2D81FF" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}} m="1rem auto" onClick={() => loadData(offset, curTab, ethUSD)}>
                   <Text fontSize="14px" fontWeight="bold">Load more</Text>
               </Flex>
             )
+        }
+        {(!loading && saleList.length === 0) && 
+          <Box w="100%">
+              <Text textAlign="center" color="#555" fontWeight="bold">No Data</Text>
+          </Box>
         }
       </Flex>
     </Box>

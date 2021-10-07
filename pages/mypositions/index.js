@@ -29,6 +29,10 @@ import { useWallet } from "use-wallet";
 
 import { getBalanceOf } from "../../contracts/erc721";
 import { getWalletAddress, isWalletConnected } from "../../lib/wallet";
+import {
+    createSwap,
+    cancelSwap,
+} from "../../contracts/unibond";
 
 const base64  = require("base-64");
 import {
@@ -50,12 +54,11 @@ import {
     SCAN_LINK,
 } from "../../utils/const";
 import {
-    isStableCoin,
-    isWETH,
-    get2DayChange,
-    useDeltaTimestamps,
+    getLiquidityValue,
+    getFeeValue,
     formatDollarAmount,
     getPositionData,
+    getChange2DayData,
 } from "../../lib/helper";
 import {
     isApprovedForAll,
@@ -67,7 +70,6 @@ const MyPositionPage = () => {
     const router = useRouter();
     const wallet = useWallet();
     const toast = useToast();
-    const [v3Balance, setv3Balance] = useState("-");
     const [initiated, setInitiated] = useState(false);
     const [myItems, setMyItems] = useState([]);
     const [ethUSD, setETHUSD] = useState(0);
@@ -82,6 +84,8 @@ const MyPositionPage = () => {
     const [curAsset, setCurAsset] = useState(0);
     const [assetAmount, setAssetAmount] = useState(0);
     const graphqlEndpoint ='https://api.thegraph.com/subgraphs/name/benesjan/uniswap-v3-subgraph';
+    const [onsaleAssets, setOnSaleAssets] = useState([]);
+    const [curTab, setCurTab] = useState(0);
     
     useEffect(async () => {
     }, []);
@@ -97,91 +101,6 @@ const MyPositionPage = () => {
 
     const onModalClose = () => {
         setIsModalOpen(false);
-    }
-
-    const getChange2DayData = async (poolAddress) => {
-        let poolRes = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-            query: POOL_QUERY(poolAddress, undefined),
-        });
-        const current = poolRes.data.data.pools[0];
-        const [t24, t48, tWeek] = useDeltaTimestamps();
-        let block24 = (await axios.post(BLOCK_ENDPOINT, {
-            query: GET_BLOCK_QUERY(t24),
-        })).data.data;
-        const poolRes24 = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-            query: POOL_QUERY(poolAddress, block24.blocks[0].number),
-        });
-        const oneDay = poolRes24.data.data.pools[0];
-        let block48 = (await axios.post(BLOCK_ENDPOINT, {
-            query: GET_BLOCK_QUERY(t48),
-        })).data.data;
-        const poolRes48 = await axios.post(UNIV3_GRAPH_ENDPOINT, {
-            query: POOL_QUERY(poolAddress, block48.blocks[0].number),
-        });
-        const twoDay = poolRes48.data.data.pools[0];
-
-        const [volumeUSD, volumeUSDChange] =
-            current && oneDay && twoDay
-                ? get2DayChange(current.volumeUSD, oneDay.volumeUSD, twoDay.volumeUSD)
-                : current
-                ? [parseFloat(current.volumeUSD), 0]
-                : [0, 0]
-        const tvlUSD = current ? parseFloat(current.totalValueLockedUSD) : 0
-
-        const tvlUSDChange =
-            current && oneDay
-                ? ((parseFloat(current.totalValueLockedUSD) - parseFloat(oneDay.totalValueLockedUSD)) /
-                    parseFloat(oneDay.totalValueLockedUSD)) *
-                100
-                : 0
-
-        return {
-            volumeUSD,
-            volumeUSDChange,
-            tvlUSD,
-            tvlUSDChange
-        }
-    };
-
-
-    const getLiquidityValue = (position, ethUSDPrice) => {
-        const { curPrice, token0, token1, amount0, amount1, liquidity } = position;
-        if (!liquidity || !parseInt(liquidity)) return "-";
-        let usdLiq = 0;
-        if (isStableCoin(token1)) {
-            usdLiq = amount0 / curPrice + amount1;
-        } else if (isStableCoin(token0)) {
-            usdLiq = amount1 * curPrice + amount0;
-        } else if (isWETH(token1)) {
-            usdLiq = amount0 / curPrice * ethUSDPrice + amount1 * ethUSDPrice;
-        } else if (isWETH(token0)) {
-            usdLiq = amount1 * curPrice * ethUSDPrice + amount0 * ethUSDPrice;
-        } else {
-            return "-";
-        }
-        if (usdLiq > 1) return usdLiq.toFixed(2);
-        if (usdLiq >= 0.00001) return usdLiq.toFixed(6);
-        return "<0.00001";
-    }
-
-    const getFeeValue = (position) => {
-        const { curPrice, token0, token1, fee0, fee1, liquidity } = position;
-        if (!liquidity || !parseInt(liquidity)) return "-";
-        let usdLiq = 0;
-        if (isStableCoin(token1)) {
-            usdLiq = fee0 / curPrice + fee1;
-        } else if (isStableCoin(token0)) {
-            usdLiq = fee1 * curPrice + fee0;
-        } else if (isWETH(token1)) {
-            usdLiq = fee0 / curPrice * ethUSD + fee1 * ethUSD;
-        } else if (isWETH(token0)) {
-            usdLiq = fee1 * curPrice * ethUSD + fee0 * ethUSD;
-        } else {
-            return "-";
-        }
-        if (usdLiq > 1) return usdLiq.toFixed(2);
-        if (usdLiq >= 0.00001) return usdLiq.toFixed(6);
-        return "<0.00001";
     }
 
     useEffect(async () => {
@@ -205,9 +124,6 @@ const MyPositionPage = () => {
             } catch (e) {
             }
             try {
-                const signer = await provider.getSigner();
-                const bal = await getBalanceOf(UNI_V3_NFT_POSITIONS_ADDRESS, address, signer);
-                setv3Balance(bal);
 
                 let promises = [];
                 let _swapList = [];
@@ -230,12 +146,41 @@ const MyPositionPage = () => {
                     const twodayChgInfo = await getChange2DayData(pos.poolAddr);
                     pos.twodayChgInfo = twodayChgInfo;
                     jsonData.assetValue = getLiquidityValue(pos, ethUSDPrice);
-                    jsonData.feeValue = getFeeValue(pos);
+                    jsonData.feeValue = getFeeValue(pos, ethUSDPrice);
                     jsonData.chgData = pos.twodayChgInfo;
-                    jsonData.poolAddress = pos.poolAddress;
+                    jsonData.poolAddress = pos.poolAddr;
                     _swapList.push(jsonData);
                 }
                 setMyItems([..._swapList])
+                const onsaleAssets = await axios.post(UNIBOND_GRAPH_ENDPOINT, {
+                  query: ONSALE_ASSETS_QUERY.replace('%1', address),
+                });
+                console.log("onsaleAssets", onsaleAssets)
+                promises = [];
+                _swapList = [];
+                assets = onsaleAssets.data.data.swapLists;
+                for (let i = 0; i < assets.length; i ++) {
+                    const _swap = assets[i];
+                    promises.push(getTokenURI(UNI_V3_NFT_POSITIONS_ADDRESS, _swap.tokenId, provider));
+                }
+                promiseResult = await Promise.all(promises);
+                for(let i = 0; i < promiseResult.length; i ++) {
+                    const parts = promiseResult[i].split(",");
+                    const bytes = base64.decode(parts[1]);
+                    let jsonData = JSON.parse(bytes);
+                    jsonData.tokenId = assets[i].tokenId;
+                    jsonData.swapId = assets[i].swapId;
+                    let pos = await getPositionData(assets[i].tokenId, []);
+                    const twodayChgInfo = await getChange2DayData(pos.poolAddr);
+                    pos.twodayChgInfo = twodayChgInfo;
+                    jsonData.assetValue = getLiquidityValue(pos, ethUSDPrice);
+                    jsonData.feeValue = getFeeValue(pos, ethUSDPrice);
+                    jsonData.chgData = pos.twodayChgInfo;
+                    jsonData.poolAddress = pos.poolAddr;
+                    _swapList.push(jsonData);
+                }
+                setOnSaleAssets([..._swapList]);
+                console.log("onsale", _swapList)
                 setLoading(false);
             } catch (e) {
                 console.log(e);
@@ -246,11 +191,8 @@ const MyPositionPage = () => {
     }, [wallet]);
 
     const v3BalanceStr = useMemo(() => {
-        if (v3Balance === "-") {
-            return "My Uniswap V3 positions (-)";
-        }
-        return `My Uniswap V3 positions (${v3Balance})`;
-    }, [v3Balance]);
+        return `My Uniswap V3 positions (${myItems.length + onsaleAssets.length})`;
+    }, [myItems, onsaleAssets]);
 
     const renderDetailItem = (oName, value) => {
         return (
@@ -323,6 +265,14 @@ const MyPositionPage = () => {
         }
     }
 
+    const convertToBigNumer = (str, decimals) => {
+        const parts = str.split(".");
+        let plen = 0;
+        if (parts[1] && parts[1].length) plen = parts[1].length;
+        if (plen > decimals) return "";
+        return parts[0] + (plen ? parts[1] : "") + "0".repeat(decimals - plen);
+    }
+
     const onList = async () => {
         try {
             const amount = convertToBigNumer(assetAmount + "", SUPPORT_ASSETS[curAsset].decimals);
@@ -375,6 +325,7 @@ const MyPositionPage = () => {
                 });
             }
         } catch (e) {
+            console.log(e);
             toast({
                 title: "Error",
                 description: "Transaction is reverted.",
@@ -500,30 +451,27 @@ const MyPositionPage = () => {
         );
     }
 
-    return (
-        <Box w="100%" mt="6rem" minHeight="71vh" color="#000">
-            {renderModal()}
-            <Flex maxW="80rem" w="100%" m="2rem auto" p="0 1rem" flexDirection="column">
-                <Flex flexDirection="row" justifyContent="space-between" mb="30px" bg="#EDF0F3" p="20px" borderRadius="10px">
-                    <Flex flexDirection="row">
-                        <Image src="/images/tokenpage/avatar.png" alt="/" w={14}/>
-                        <Flex flexDirection="column" m="auto 1rem">
-                            <Text fontWeight="bold">Welcome</Text>
-                            <Text fontWeight="bold">{zoraScoreStr} ZORA SCORE</Text>
-                        </Flex>
-                    </Flex>
-                    <Flex flexDirection="row">
-                        <Image src="/images/tokenpage/uni.png" alt="/" w={14} borderRadius="100%"/>
-                        <Text fontWeight="bold" m="auto 1rem" fontSize="20px">{v3BalanceStr}</Text>
-                    </Flex>
-                    <Flex>
-                    </Flex>
+    const renderTab = () => {
+        return (
+            <Flex flexDirection="row" mb="30px">
+                <Flex bg={curTab?"#aaa":"#000"} color="#fff" borderRadius="10px" p="8px 20px" fontSize="14px" fontWeight="bold"
+                    cursor="pointer" _hover={{opacity: 0.9}} userSelect="none" onClick={() => {setCurTab(0)}}
+                >
+                    Owned ( {myItems.length} )
                 </Flex>
-                {loading &&
-                    <Box padding="6" boxShadow="lg">
-                        <SkeletonText mt="4" noOfLines={4} spacing="4" />
-                    </Box>
-                }
+                <Flex bg={!curTab?"#aaa":"#000"} color="#fff" borderRadius="10px" p="8px 20px" fontSize="14px" fontWeight="bold" ml="20px"
+                    cursor="pointer" _hover={{opacity: 0.9}} userSelect="none" onClick={() => {setCurTab(1)}}
+                >
+                    On Sale ({onsaleAssets.length})
+                </Flex>
+            </Flex>
+        )
+    }
+
+    const renderOwnedPanel = () => {
+        if (curTab) return (null);
+        return (
+            <Box>
                 <SimpleGrid spacing="2rem" minChildWidth="35rem" w="100%">
                     {myItems.map((item, index) => {
                         return (
@@ -569,6 +517,130 @@ const MyPositionPage = () => {
                         <Text textAlign="center" color="#555" fontWeight="bold">You don't have any Uniswap V3 NFTs in your wallet.</Text>
                     </Box>
                 }
+            </Box>
+        )
+    }
+
+    const onCancelSale = async (item) => {
+        if (listing) return;
+        try {
+            setListing(true);
+            const provider = new ethers.providers.Web3Provider(wallet.ethereum);
+            const signer = await provider.getSigner();
+            const hash = await cancelSwap(UNIBOND_ADDRESS, item.swapId, signer);
+            if (hash) {
+                toast({
+                    title: "Success",
+                    description: "Transaction is confirmed.",
+                    status: "success",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+                setMyItems([...myItems, item]);
+                let i;
+                const _newItems = [];
+                for (i = 0; i < onsaleAssets.length; i ++)
+                    if (onsaleAssets[i].tokenId !== item.tokenId) _newItems.push(onsaleAssets[i]);
+                setOnSaleAssets([..._newItems]);
+            } else {
+                toast({
+                    title: "Error",
+                    description: "Transaction is reverted.",
+                    status: "error",
+                    duration: 5000,
+                    isClosable: true,
+                    position: "top-right"
+                });
+            }
+        } catch (e) {
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
+        } finally {
+            setListing(false);
+        }
+    }
+
+    const renderOnSalePanel = () => {
+        if (!curTab) return (null);
+        return (
+            <Box>
+                <SimpleGrid spacing="2rem" minChildWidth="35rem" w="100%">
+                    {onsaleAssets.map((item, index) => {
+                        const tItem = item;
+                        return (
+                            <Flex key={index} borderRadius="20px" p="20px 30px" flexDirection="row" bg="#EDF0F3">
+                                <Image src={item.image} alt="/" maxW="140px" mr="30px"/>
+                                <Flex flexDirection="column" mt="15px">
+                                    {renderDetailItem("Asset Value:", "$ " + item.assetValue)}
+                                    {renderDetailItem("Unclaimed Fees:", "$ " + item.feeValue)}
+                                    {/* {renderDetailItem("LP Risk Profile:","-")} */}
+                                    {renderDetailItem24("Volume 24h:", formatDollarAmount(item.chgData.volumeUSD), item.chgData.volumeUSDChange)}
+                                    {renderDetailItem24("TVL:", formatDollarAmount(item.chgData.tvlUSD), item.chgData.tvlUSDChange)}
+                                    <Flex flexDirection="row">
+                                        <Flex bg="#000" m="15px auto 0 0" p="5px 30px" borderRadius="10px" color="#fff"
+                                            cursor="pointer" userSelect="none" _hover={{opacity: 0.9}} transition="0.2s"
+                                            onClick={() => {
+                                                onCancelSale(tItem);
+                                            }}
+                                        >
+                                            <Text>Cancel</Text>
+                                            {listing && <Spinner size="sm" m="auto 0.5rem"/>}
+                                        </Flex>
+                                    </Flex>
+                                </Flex>
+                                <Flex ml="auto">
+                                    <Link isExternal href={SCAN_LINK + "/address/" + item.poolAddress}>
+                                        <ExternalLinkIcon/>
+                                    </Link>
+                                </Flex>
+                            </Flex>
+                        )
+                    })}
+                    <Box/>
+                </SimpleGrid>
+                {(!loading && !onsaleAssets.length) &&
+                    <Box w="100%">
+                        <Text textAlign="center" color="#555" fontWeight="bold">You don't have any Uniswap V3 NFTs on Sale.</Text>
+                    </Box>
+                }
+            </Box>
+        )
+    }
+
+    return (
+        <Box w="100%" mt="6rem" minHeight="71vh" color="#000">
+            {renderModal()}
+            <Flex maxW="80rem" w="100%" m="2rem auto" p="0 1rem" flexDirection="column">
+                <Flex flexDirection="row" justifyContent="space-between" mb="30px" bg="#EDF0F3" p="20px" borderRadius="10px">
+                    <Flex flexDirection="row">
+                        <Image src="/images/tokenpage/avatar.png" alt="/" w={14}/>
+                        <Flex flexDirection="column" m="auto 1rem">
+                            <Text fontWeight="bold">Welcome</Text>
+                            <Text fontWeight="bold">{zoraScoreStr} ZORA SCORE</Text>
+                        </Flex>
+                    </Flex>
+                    <Flex flexDirection="row">
+                        <Image src="/images/tokenpage/uni.png" alt="/" w={14} borderRadius="100%"/>
+                        <Text fontWeight="bold" m="auto 1rem" fontSize="20px">{v3BalanceStr}</Text>
+                    </Flex>
+                    <Flex>
+                    </Flex>
+                </Flex>
+                {renderTab()}
+                {loading &&
+                    <Box padding="6" boxShadow="lg">
+                        <SkeletonText mt="4" noOfLines={4} spacing="4" />
+                    </Box>
+                }
+                {renderOwnedPanel()}
+                {renderOnSalePanel()}
             </Flex>
         </Box>
     );

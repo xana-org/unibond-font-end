@@ -69,7 +69,7 @@ export const OWNED_ASSETS_QUERY = `
 export const ONSALE_ASSETS_QUERY = `
     query onSaleAssets {
         swapLists(first: 100, where: {
-            creator: %1,
+            creator: "%1",
             status: 1
         }) {
             swapId
