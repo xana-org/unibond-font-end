@@ -9,7 +9,7 @@ const Home = () => {
             <Text fontWeight="bold" color="#5a5a5a" fontSize="46px">World's First</Text>
             <Text fontWeight="regular" color="#5a5a5a" fontSize="36px">fNFT Marketplace</Text>
           </Box>
-          <Image src="./images/back.jpeg" alt="" maxH="600px" width="100%" objectFit="cover"/>
+          <Image src="./images/back.png" alt="" maxH="600px" width="100%" objectFit="cover"/>
         </Box>
         <SimpleGrid minChildWidth="20rem" spacing="30px">
           <Box bg="#FDFDFF" p="2rem  4rem">
