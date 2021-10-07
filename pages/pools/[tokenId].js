@@ -20,6 +20,10 @@ import { useRouter } from "next/router";
 import { useWallet } from "use-wallet";
 
 import {
+    swapWithETH,
+    swapWithToken
+  } from "../../contracts/unibond";
+import {
     isWalletConnected,
     shortenWalletAddress,
 } from "../../lib/wallet";
@@ -45,7 +49,7 @@ import {
     ETHPRICE_QUERY,
     UNIBOND_GRAPH_ENDPOINT,
     IS_ON_SALE_QUERY,
-    ONSALE_ASSETS_QUERY,
+    UNIBOND_ADDRESS,
 } from "../../utils/const"
 import LineChart from "../../components/LineChart";
 import BarChart from "../../components/BarChart";
@@ -713,7 +717,8 @@ const Pool = () => {
           const provider = new ethers.providers.Web3Provider(wallet.ethereum);
           const signer = await provider.getSigner();
           let hash = "";
-          if (buyItem.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead") {
+          console.log(saleItem);
+          if (saleItem.payToken.toLowerCase() === "0x000000000000000000000000000000000000dead") {
             hash = await swapWithETH(UNIBOND_ADDRESS, parseFloat(saleItem.amount) / Math.pow(10, 18), saleItem.swapId, signer);
           } else {
             hash = await swapWithToken(UNIBOND_ADDRESS, saleItem.swapId, signer);
@@ -727,6 +732,8 @@ const Pool = () => {
                 isClosable: true,
                 position: "top-right"
             });
+            setSale(false);
+            setSaleItem(null);
           } else {
             toast({
                 title: "Error",
@@ -738,14 +745,15 @@ const Pool = () => {
             });
           }
         } catch(e) {
-          toast({
-              title: "Error",
-              description: "Transaction is reverted.",
-              status: "error",
-              duration: 5000,
-              isClosable: true,
-              position: "top-right"
-          });
+            console.log(e);
+            toast({
+                title: "Error",
+                description: "Transaction is reverted.",
+                status: "error",
+                duration: 5000,
+                isClosable: true,
+                position: "top-right"
+            });
         } finally {
           setConfirming(false);
         }
@@ -942,7 +950,7 @@ const Pool = () => {
                             )}
                             {(!confirming&&isSale)&&(
                                 <Box p="1.5rem 1rem" justifyContent="center" alignItems="center" display="flex">
-                                    <Button bg="#24252C" color="#fff" borderRadius="30px" size="lg" w="50%" onClick={onBuyItem}>
+                                    <Button bg="#24252C" color="#fff" borderRadius="30px" size="lg" w="50%" onClick={onBuyItem} _hover={{opacity: 0.9}}>
                                         Buy Item
                                     </Button>
                                 </Box>

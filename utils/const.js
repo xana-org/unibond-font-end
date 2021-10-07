@@ -40,6 +40,7 @@ export const IS_ON_SALE_QUERY = `
             creator,
             status,
             buyer,
+            payToken
         }
     }
 `;
