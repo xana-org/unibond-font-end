@@ -319,6 +319,11 @@ const SaleList = () => {
             isClosable: true,
             position: "top-right"
         });
+        const _newItems = [];
+        for (let i = 0; i < myItems.length; i ++)
+            if (saleList[i].tokenId !== buyItem.tokenId) _newItems.push(myItems[i]);
+        setSaleList([..._newItems]);
+
       } else {
         toast({
             title: "Error",
