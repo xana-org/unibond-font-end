@@ -31,7 +31,7 @@ const Header = () => {
     }
 
     const renderWallet = () => {
-        //if (!isWalletConnected(wallet))
+        if (!isWalletConnected(wallet))
             return (
                 <Link href="/connect">
                     <Flex bg="#24252C" p="0.7rem 1rem" borderRadius="30px" cursor="pointer" transition="0.3s" _hover={{opacity: 0.9}}>
