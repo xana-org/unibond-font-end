@@ -5,9 +5,9 @@ const Home = () => {
     <Box w="100%" m="6rem 0rem" color="#0E0E0E">
       <Flex maxW="80rem" w="100%" height="auto" m="3rem auto" p="0 1rem" flexDirection="column">
         <Box mb="2rem" justifyContent="center" position="relative">
-          <Box position="absolute" top="15%" textAlign="center" w="100%" pl="5%">
-            <Text fontWeight="bold" color="#fff" fontSize="46px">Financial</Text>
-            <Text fontWeight="regular" color="#fff" fontSize="36px">NFT marketplace</Text>
+          <Box position="absolute" top="17%" textAlign="center" w="100%" pl="5%">
+            <Text fontWeight="300" color="#fff" fontSize="34px">Financial</Text>
+            <Text fontWeight="200" color="#fff" fontSize="30px">NFT marketplace</Text>
           </Box>
           <Image src="./images/back.png" alt="" maxH="600px" width="100%" objectFit="cover"/>
         </Box>
