@@ -13,23 +13,23 @@ const Home = () => {
           </Box>
           <Image src="./images/back.png" alt="" maxH="600px" width="100%" objectFit="cover"/>
         </Box> */}
-        <Flex flexDirection="row" mb="40px">
-          <Flex w="45%" flexDirection="column">
+        <Flex flexDirection="row" mb="150px">
+          <Flex w="55%" flexDirection="column">
             <Flex w="100%" flexDirection="column" m="auto 0">
               <Text fontSize="50px" fontWeight="bold">Yield-generating <br/> financial NFTS</Text>
               <Text fontSize="20px" color="#555">Unibond is the world's first financial NFT marketplace.</Text>
               <Flex
-                  bg="#ff0000" border="1px solid #ff0000" color="#fff" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="1rem auto 0 0"
-                  _hover={{bg: "#fff", color:"#ff0000"}}
+                  bg="#000" color="#fff" p="0.8rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="2rem auto 0 0"
+                  _hover={{opacity: 0.9}}
                   onClick={() => {
-                    router.push("/explore");
+                    router.push("/salelist");
                   }}
               >
-                  <Text fontSize="14px" fontWeight="bold">Explorer</Text>
+                  <Text fontSize="14px" fontWeight="bold">Buy Now</Text>
               </Flex>
             </Flex>
           </Flex>
-          <Flex w="50%" ml="5%">
+          <Flex w="40%" ml="5%">
             <Image src="./images/homepage.png" alt="" width="100%" maxH="400px" objectFit="cover"
               borderRadius="20px"
             />
