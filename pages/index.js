@@ -16,7 +16,7 @@ const Home = () => {
         <Flex flexDirection={["column", "column", "column", "row"]} mb="150px">
           <Flex w={["100%", "100%", "100%", "55%"]} flexDirection="column">
             <Flex w="100%" flexDirection="column" m="auto 0">
-              <Text fontSize="50px" fontWeight="bold">Yield-generating <br/> Financial NFTS</Text>
+              <Text fontSize="50px" fontWeight="bold">Yield-generating <br/> Financial NFTs</Text>
               <Text fontSize="20px" color="#555">Unibond is the world's first financial NFT marketplace.</Text>
               <Flex
                   bg="#000" color="#fff" p="0.8rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="2rem auto 0 0"
@@ -57,8 +57,8 @@ const Home = () => {
             <Text fontWeight="regular" color="#a2a2ad" mt="40px" fontSize="15px">UI/UX is a priority for ease of use</Text>
           </Box>
           <Box bg="#FDFDFF" p="2rem  4rem">
-            <Text fontWeight="bold" color="#000" fontSize="22px">Data Drive</Text>
-            <Text fontWeight="regular" color="#a2a2ad" mt="40px" fontSize="15px">Marketplace gathers data to price your assets</Text>
+            <Text fontWeight="bold" color="#000" fontSize="22px">Data Driven</Text>
+            <Text fontWeight="regular" color="#a2a2ad" mt="40px" fontSize="15px">We gather data to price your assets</Text>
           </Box>
         </SimpleGrid>
       </Flex>
