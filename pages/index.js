@@ -7,7 +7,7 @@ const Home = () => {
         <Box mb="2rem" justifyContent="center" position="relative">
           <Box position="absolute" top="17%" textAlign="center" w="100%" pl="5%">
             <Text fontWeight="300" color="#fff" fontSize="34px">Financial</Text>
-            <Text fontWeight="200" color="#fff" fontSize="30px">NFT marketplace</Text>
+            <Text fontWeight="200" color="#fff" fontSize="30px">NFT Marketplace</Text>
           </Box>
           <Image src="./images/back.png" alt="" maxH="600px" width="100%" objectFit="cover"/>
         </Box>

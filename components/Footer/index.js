@@ -15,7 +15,7 @@ const Footer = () => {
                         <Text fontSize="14px" fontWeight="500" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">Uniswap</Text>
                     </Link>
                     <Link href="/mypositions">
-                        <Text fontSize="14px" fontWeight="500" mt="10px" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">NFTs</Text>
+                        <Text fontSize="14px" fontWeight="500" mt="10px" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">Sell</Text>
                     </Link>
                     <Link href="/salelist">
                         <Text fontSize="14px" fontWeight="500" mt="10px" cursor="pointer" _hover={{color:"#0E0F11"}} transition="0.2s">Bonds</Text>
