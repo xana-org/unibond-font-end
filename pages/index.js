@@ -19,13 +19,13 @@ const Home = () => {
               <Text fontSize="50px" fontWeight="bold">Yield-generating <br/> Financial NFTs</Text>
               <Text fontSize="20px" color="#555">Unibond is the world's first financial NFT marketplace.</Text>
               <Flex
-                  bg="#000" color="#fff" p="0.8rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="2rem auto 0 0"
-                  _hover={{opacity: 0.9}}
-                  onClick={() => {
-                    router.push("/salelist");
-                  }}
+                bg="#000" color="#fff" p="0.8rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="2rem auto 0 0"
+                _hover={{opacity: 0.9}}
+                onClick={() => {
+                  router.push("/salelist");
+                }}
               >
-                  <Text fontSize="14px" fontWeight="bold">Buy Now</Text>
+                <Text fontSize="14px" fontWeight="bold">Buy Now</Text>
               </Flex>
             </Flex>
           </Flex>
@@ -45,7 +45,7 @@ const Home = () => {
             <Text fontWeight="regular" color="#a2a2ad" mt="40px" fontSize="15px">Create listing for your Uniswap V3 NFT or fNFT</Text>
           </Box>
           <Box bg="#FDFDFF" p="2rem  4rem">
-            <Text fontWeight="bold" color="#000" fontSize="22px">Sale For A Premium</Text>
+            <Text fontWeight="bold" color="#000" fontSize="22px">Premium Pricing</Text>
             <Text fontWeight="regular" color="#a2a2ad" mt="40px" fontSize="15px">Best performing NFTs will get a price boost</Text>
           </Box>
           <Box bg="#FDFDFF" p="2rem  4rem">
