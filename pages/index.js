@@ -1,16 +1,40 @@
-import { AspectRatio, Box, Flex, Image, Input, SimpleGrid, Text } from "@chakra-ui/core";
+import { Box, Flex, Image, SimpleGrid, Text } from "@chakra-ui/core";
+import { useRouter }            from "next/router";
 
 const Home = () => {
+  const router = useRouter();
   return (
     <Box w="100%" m="6rem 0rem" color="#0E0E0E">
       <Flex maxW="80rem" w="100%" height="auto" m="3rem auto" p="0 1rem" flexDirection="column">
-        <Box mb="2rem" justifyContent="center" position="relative">
+        {/* <Box mb="2rem" justifyContent="center" position="relative">
           <Box position="absolute" top="17%" textAlign="center" w="100%" pl="5%">
             <Text fontWeight="300" color="#fff" fontSize="34px">Financial</Text>
             <Text fontWeight="200" color="#fff" fontSize="30px">NFT Marketplace</Text>
           </Box>
           <Image src="./images/back.png" alt="" maxH="600px" width="100%" objectFit="cover"/>
-        </Box>
+        </Box> */}
+        <Flex flexDirection="row" mb="40px">
+          <Flex w="45%" flexDirection="column">
+            <Flex w="100%" flexDirection="column" m="auto 0">
+              <Text fontSize="50px" fontWeight="bold">Yield-generating <br/> financial NFTS</Text>
+              <Text fontSize="20px" color="#555">Unibond is the world's first financial NFT marketplace.</Text>
+              <Flex
+                  bg="#ff0000" border="1px solid #ff0000" color="#fff" p="0.5rem 2rem" borderRadius="30px" cursor="pointer" transition="0.2s" m="1rem auto 0 0"
+                  _hover={{bg: "#fff", color:"#ff0000"}}
+                  onClick={() => {
+                    router.push("/explore");
+                  }}
+              >
+                  <Text fontSize="14px" fontWeight="bold">Explorer</Text>
+              </Flex>
+            </Flex>
+          </Flex>
+          <Flex w="50%" ml="5%">
+            <Image src="./images/homepage.png" alt="" width="100%" maxH="400px" objectFit="cover"
+              borderRadius="20px"
+            />
+          </Flex>
+        </Flex>
         <SimpleGrid minChildWidth="20rem" spacing="30px">
           <Box bg="#FDFDFF" p="2rem  4rem">
             <Text fontWeight="bold" color="#000" fontSize="22px">Connect your wallet</Text>
